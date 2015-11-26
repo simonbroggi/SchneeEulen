@@ -1,0 +1,3 @@
+[submodule "libs/pigpio"]
+	path = libs/pigpio
+	url = https://github.com/joan2937/pigpio
