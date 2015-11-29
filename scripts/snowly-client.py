@@ -1,25 +1,15 @@
 #!/usr/bin/python
 from PodSixNet.Connection import connection, ConnectionListener
-from time import sleep
+import time, os, sys, select, threading, socket
+import logging
+import pigpio
 import consts
-import os
-import sys
-import time
-import sys
-import select
+from time import sleep
 
 __exitSignal__ = False
 
-
-# use RPi.GPIO if available, otherwise fallback to FakeRPi.GPIO for testing
-try:
-    import RPi.GPIO as io
-except ImportError:
-    import FakeRPi.GPIO as io
-
-
 # generic network listener, used for reconnecting
-class WhiteRabbitClient(ConnectionListener):
+class SnowlyClient(ConnectionListener):
     host = ''
     port = 0
     state = consts.STATE_DISCONNECTED
@@ -34,22 +24,22 @@ class WhiteRabbitClient(ConnectionListener):
         self.connect()
 
     def Network(self, data):
-        #print 'network data:', data
+        log.debug('received network data: %s' % data)
         pass
 
     def Network_connected(self, data):
-        print "connected to the server"
+        log.debug("connected to the server")
         self.state = consts.STATE_CONNECTED
         self.isConnecting = 0
         self.send_config()
 
     def Network_disconnected(self, data):
-        print "disconnected from the server"
+        log.debug("disconnected from the server")
         self.state = consts.STATE_DISCONNECTED
         self.isConnecting = 0
 
     def Network_error(self, data):
-        #print "error:", data['error'][1]
+        log.debug("error: %s" % data['error'][1])
         self.state = consts.STATE_DISCONNECTED
         self.isConnecting = 0
 
@@ -62,13 +52,13 @@ class WhiteRabbitClient(ConnectionListener):
             io.output(conf.clientOutputMappings[index], val)
 
     def connect(self):
-        #print "Connecting to "+''.join((self.host, ':'+str(self.port)))
+        log.debug("Connecting to "+''.join((self.host, ':'+str(self.port))))      
         self.isConnecting = 1
         self.Connect((self.host, self.port))
-
+        
     def reconnect(self):
         # if we get disconnected, only try once per second to re-connect
-        #print "no connection or connection lost - trying reconnection in %ds..." % conf.NETWORK_CONNECT_RETRY_DELAY
+        log.debug("no connection or connection lost - trying reconnection in %ds..." % conf.NETWORK_CONNECT_RETRY_DELAY)
         sleep(conf.NETWORK_CONNECT_RETRY_DELAY)
         self.connect()
 
@@ -121,49 +111,38 @@ class WhiteRabbitClient(ConnectionListener):
         if self.state == consts.STATE_DISCONNECTED and not self.isConnecting:
             self.reconnect()
 
+# logging configuration
+log = logging.getLogger(__name__)
+logging.basicConfig(level=logging.DEBUG, format='[%(levelname)s] (%(threadName)-10s) %(message)s')
 
-# read configuration (optionally from different script)
+# read configuration
 config_file = 'conf'
 if len(sys.argv) == 2:
     config_file = os.path.basename(sys.argv[1])
     if config_file[-3:] == ".py":
         config_file = config_file[:-3]
 
-print "Reading configuration from file ", config_file
+log.debug("Reading configuration from file %s.py" % config_file)
 conf = __import__(config_file, globals(), locals(), [])
 
+# update log configuration
+log.setLevel(conf.LOG_LEVEL)
+##logging.basicConfig(level=conf.LOG_LEVEL, format='[%(levelname)s] (%(threadName)-10s) %(message)s')
 
-print "Initializing GPIO"
-io.setmode(io.BCM)
-for pin in conf.clientInputMappings:
-    print "- set pin "+str(pin)+" as INPUT"
-    io.setup(pin, io.IN)
+log.debug("Creating client %s" % conf.CLIENT_ID)
+client = SnowlyClient(conf.MASTER_IP, conf.MASTER_PORT)
 
-for pin in conf.clientOutputMappings:
-    print "- set pin "+str(pin)+" as OUTPUT"
-    io.setup(pin, io.OUT,  initial=io.LOW)
-
-
-print "Connecting to master"
-client = WhiteRabbitClient(conf.RABBIT_MASTER, conf.RABBIT_MASTER_PORT)
-
-# delegate input callback to network client
-def event_input_callback(channel):
-    channelIndex = conf.clientInputMappings.index(channel)
-    if channelIndex >= 0:
-	    client.event_input(channelIndex, io.input(channel))
-
-print "Adding input callbacks"
-for pin in conf.clientInputMappings:
-    io.add_event_detect(pin, io.BOTH, callback=event_input_callback)
-
+# main thread
 try:
     while not __exitSignal__:
+        log.debug("- main loop step %s" % time.time())
         client.check_keyboard_commands()
         client.Loop()
-        sleep(0.001)
+        sleep(1)
+        
 except KeyboardInterrupt:
+    log.debug("Keyboard interrupt")
     __exitSignal__ = True
 
-print "\nExiting with GPIO cleanup"
-io.cleanup()
+log.debug("Exit client %s" % conf.CLIENT_ID)
+
