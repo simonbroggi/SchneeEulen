@@ -1,53 +1,60 @@
 #!/usr/bin/env python
-
+import time, sys, random, math
+import threading
+import pigpio 
 import time
-import pigpio
 
-servos = 4 # broadcom GPIO number
-pi = pigpio.pi()
+pi = pigpio.pi() 
+ 
+servos = 4 #GPIO number
 
-pi.set_servo_pulsewidth(servos, 500)
 
 #pulsewidth can only set between 500-2500
-delay=8
 freq=50
-
-#pi.set_PWM_frequency(4, freq)
+pi.set_PWM_frequency(servos, freq)
 print("Set PWM frequency to {}".format(freq, 1000))
 
-def slow_movement():
-    for pw in range(800,1500,1):
+MIN_ANGLE=0
+MIN_PULSEWIDTH=500
+MAX_ANGLE=180
+MAX_PULSEWIDTH=2500
+
+def servodrive(pin, start_angle, end_angle, duration, step_size = 1):
+    pi = pigpio.pi()
+
+    pulse_range = MAX_PULSEWIDTH - MIN_PULSEWIDTH
+    angle_range = MAX_ANGLE - MIN_ANGLE
+
+    start_pw = MIN_PULSEWIDTH + int(round(((start_angle - MIN_ANGLE)/angle_range) * pulse_range))
+    end_pw = MIN_PULSEWIDTH + int(round(((end_angle - MIN_ANGLE)/angle_range) * pulse_range))
+    
+    step_count = abs((end_pw - start_pw + 1)/step_size)
+    
+    step_delay = duration / step_count
+    
+    if start_pw > end_pw:
+        step_size = - abs(step_size)
+
+    print "servo worker on pin %s start_pw=%s end_pw=%s step_size=%s duration=%s" % (pin, start_pw, end_pw, step_size, duration)
+    
+    for pw in range(start_pw, end_pw, step_size):
         pi.set_servo_pulsewidth(servos, pw)
-        time.sleep(0.1)
+        time.sleep(step_delay)
 
-try:
-    while True:
+    pi.stop()
 
-##      pi.set_servo_pulsewidth(servos, 800)
-##      time.sleep(2)
-##      pi.set_servo_pulsewidth(servos, 2100)
-##      time.sleep(2)
 
-        slow_movement()
-        #pi.set_PWM_dutycycle(4, 255)
-        #time.sleep(2)
 
-#        pi.set_servo_pulsewidth(servos, 500) #0 degree
-#        print("Servo {} {} micro pulses".format(servos, 1000))
-#        time.sleep(delay)
-#        pi.set_servo_pulsewidth(servos, 625) #90 degree
-#        print("Servo {} {} micro pulses".format(servos, 1500))
-#        time.sleep(delay)
+pi.set_servo_pulsewidth(servos, 0)
 
-#        pi.set_servo_pulsewidth(servos, 2500) #180 degree
-#        print("Servo {} {} micro pulses".format(servos, 2000))
-#        time.sleep(delay)
-#        pi.set_servo_pulsewidth(servos, 1500)
-#        print("Servo {} {} micro pulses".format(servos, 1500))
-#        time.sleep(delay)
+t = threading.Thread(target=servodrive, args=(servos, 0.0, MAX_ANGLE, 4.0, 2))
+t.start()
+t.join()
+t = threading.Thread(target=servodrive, args=(servos, MAX_ANGLE, 0.0, 4.0, -2))
+t.start()
+t.join()
 
-   # switch all servos off
-except KeyboardInterrupt:
-    pigpio.set_servo_pulsewidth(servos, 0);
-
+pi.set_servo_pulsewidth(servos, 0); 
 pi.stop()
+
+
