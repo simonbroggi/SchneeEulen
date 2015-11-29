@@ -130,10 +130,11 @@ log.setLevel(conf.LOG_LEVEL)
 ##logging.basicConfig(level=conf.LOG_LEVEL, format='[%(levelname)s] (%(threadName)-10s) %(message)s')
 
 log.debug("Creating client %s" % conf.CLIENT_ID)
-client = SnowlyClient(conf.MASTER_IP, conf.MASTER_PORT)
+client = SnowlyClient(conf.CLIENT_MASTER_IP, conf.CLIENT_MASTER_PORT)
 
 # main thread
 try:
+    log.debug("hello")
     while not __exitSignal__:
         log.debug("- main loop step %s" % time.time())
         client.check_keyboard_commands()
