@@ -5,8 +5,14 @@ import logging
 import pigpio
 import consts
 from time import sleep
+from actors import led
 
 __exitSignal__ = False
+
+# logging configuration
+log = logging.getLogger(__name__)
+logging.basicConfig(level=logging.DEBUG, format='[%(levelname)s] (%(threadName)-10s) %(message)s')
+
 
 # generic network listener, used for reconnecting
 class SnowlyClient(ConnectionListener):
@@ -22,6 +28,20 @@ class SnowlyClient(ConnectionListener):
         self.host = host
         self.port = port
         self.connect()
+
+        self.initDimmers()
+        self.initServos()
+
+    def initDimmers(self):
+        log.debug("initializing actors dimmers: %s", conf.LIGHT_PINS)
+        for i in conf.LIGHT_PINS.keys():
+            dim = led.Dimmer(27, 500, 500)
+            dim.start()
+            dim.add(0.0, 1.0, 0.0, 1)
+            dim.add(1.0, 0.0, 0.0, -1)
+
+    def initServos(self):
+        None
 
     def Network(self, data):
         log.debug('received network data: %s' % data)
@@ -44,12 +64,7 @@ class SnowlyClient(ConnectionListener):
         self.isConnecting = 0
 
     def Network_setoutput(self, data):
-        # set rpi output as the white master wishes
-        index = data['index']
-        val = data['val']
-        #print time.time(), "set output ", index, ' to ', val
-        if 0 <= index < len(conf.clientOutputMappings):
-            io.output(conf.clientOutputMappings[index], val)
+        None
 
     def connect(self):
         log.debug("Connecting to "+''.join((self.host, ':'+str(self.port))))      
@@ -65,15 +80,11 @@ class SnowlyClient(ConnectionListener):
     def send_config(self):
         self.Send({
             'action': 'config',
-            'id': conf.CLIENT_ID,
-            'inputs': len(conf.clientInputMappings),
-            'outputs': len(conf.clientOutputMappings), 
-            'inputWeight': conf.CLIENT_WEIGHT_INPUTS,
-            'outputWeight': conf.CLIENT_WEIGHT_OUTPUTS
+            'id': conf.CLIENT_ID
         })
 
     def event_input(self, channel, val):
-        print "input event on channel ", channel, " val=", val, " delegating to master "
+        log.debug("input event on channel=%s val=%s delegating to master ", (channel, val))
         self.Send({
             'action': 'input',
             'channel': channel,
@@ -87,33 +98,50 @@ class SnowlyClient(ConnectionListener):
                 input = sys.stdin.readline()
                 if input.lower().startswith('i'):
                     try:
-                        # simulate input (format: "i2.1" => set input 2 to 1
+                        # led dimming command
                         channel = input[1:input.index('.')]
                         val = int(input[input.index('.')+1:])
                         print "simulate input value: channel=", channel, " val=", val
                         self.event_input(channel, val)
                     except:
                         print 'Unknown command'
-
+                    
                 return True
         return False
+
+    # def run_actions(self):
+    #     ordered_actions = sorted(self.actions.items(), key=lambda x: x[1]['weight'])
+    #
+    #     for action in ordered_actions:
+    #         action[0].update(self.current_time, self.delta_time)
+
+    # def register_action(self, action, weight):
+    #     if not isinstance(action, Action):
+    #         raise BaseException("action doesn't have base type Action", action)
+    #
+    #     self.actions[action] = {
+    #         'weight': weight
+    #     }
+    #     action.registered({'master': self, 'framerate': self.framerate})
+
+    # def remove_action(self, action):
+    #     del self.actions[action]
 
     def Loop(self):
         self.Pump()
         connection.Pump()
 
-        # test notify master of carrot found
+        # test & keep alive master
         if self.count == 1000:
-            #self.Send({"action": "carrot", "size": "large"})
+            self.Send({"action": "mouse", "size": "large"})
             self.count = 0
         self.count += + 1
 
         if self.state == consts.STATE_DISCONNECTED and not self.isConnecting:
             self.reconnect()
 
-# logging configuration
-log = logging.getLogger(__name__)
-logging.basicConfig(level=logging.DEBUG, format='[%(levelname)s] (%(threadName)-10s) %(message)s')
+
+
 
 # read configuration
 config_file = 'conf'
@@ -134,12 +162,11 @@ client = SnowlyClient(conf.CLIENT_MASTER_IP, conf.CLIENT_MASTER_PORT)
 
 # main thread
 try:
-    log.debug("hello")
     while not __exitSignal__:
-        log.debug("- main loop step %s" % time.time())
+        # log.debug("- main loop step %s" % time.time())
         client.check_keyboard_commands()
         client.Loop()
-        sleep(1)
+        sleep(0.01)
         
 except KeyboardInterrupt:
     log.debug("Keyboard interrupt")
