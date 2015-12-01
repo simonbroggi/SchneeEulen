@@ -1,33 +1,17 @@
 #!/usr/bin/python
 from weakref import WeakKeyDictionary
-import time
-import sys
-import os
+
+import time, os, sys, select, threading, socket
+import logging
+import consts
+from time import sleep
 
 from PodSixNet.Channel import Channel
 from PodSixNet.Server import Server
 
-from actions.base import Action
-from actions.states import PrintStateAction
-from actions.simple import SingleSnowHare
-from actions.multipath import MultipathBase
-from actions.multipath import IdleAnimation
-
-
-# use RPi.GPIO if available, otherwise fallback to FakeRPi.GPIO for testing
-
-try:
-    import RPi.GPIO as io
-except ImportError:
-    import FakeRPi.GPIO as io
-
 
 """
-LENZERHEIDE ZAUBERWALD 2014 * SCHNEEHASEN
-
-The white rabbit master is the main controller for the snow rabbit installation.
-All clients connect to this master and send their inputs. The master decides upon
-the action to take.
+LENZERHEIDE ZAUBERWALD 2015 * SCHNEE-EULEN (master)
 """
 class RabbitHole(Channel):
     """
@@ -210,28 +194,33 @@ class WhiteRabbitServer(Server):
     def remove_action(self, action):
         del self.actions[action]
 
+# logging configuration
+log = logging.getLogger(__name__)
+logging.basicConfig(level=logging.DEBUG, format='[%(levelname)s] (%(threadName)-10s) %(message)s')
 
-# read configuration (optionally from different script)
+# read configuration
 config_file = 'conf'
 if len(sys.argv) == 2:
     config_file = os.path.basename(sys.argv[1])
     if config_file[-3:] == ".py":
         config_file = config_file[:-3]
 
+log.debug("Reading configuration from file %s.py" % config_file)
 conf = __import__(config_file, globals(), locals(), [])
-print "Using configuration: ", conf
 
+# update log configuration
+log.setLevel(conf.LOG_LEVEL)
 
-
+log.debug("Sno")
 print "White Rabbit Master initializing"
-server = WhiteRabbitServer(localaddr=(conf.MASTER_IP, conf.MASTER_PORT), conf=conf)
+server = SnowlyServer(localaddr=(conf.MASTER_IP, conf.MASTER_PORT), conf=conf)
 
 # add actions
-server.register_action(PrintStateAction(), 999)
+#server.register_action(PrintStateAction(), 999)
 #server.register_action(SingleSnowHare(), 0)
-server.register_action(MultipathBase(config='multipath-left.csv', use_inputs=[0]), 0)
-server.register_action(MultipathBase(config='multipath-right.csv', use_inputs=[1]), 1)
-server.register_action(IdleAnimation('multipath-idle.csv', use_inputs=[0,1]), 2)
+#server.register_action(MultipathBase(config='multipath-left.csv', use_inputs=[0]), 0)
+#server.register_action(MultipathBase(config='multipath-right.csv', use_inputs=[1]), 1)
+#server.register_action(IdleAnimation('multipath-idle.csv', use_inputs=[0,1]), 2)
 
 # TODO: consolidate outputs (how?)
 
