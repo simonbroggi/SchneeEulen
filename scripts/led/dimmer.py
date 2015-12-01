@@ -14,13 +14,14 @@ class Dimmer(threading.Thread):
         self.signal = True
 
         self.pi = pigpio.pi()
-        self.steps = 1000
+        self.steps = steps
         self.freq = freq
         self.gpio = gpio_led
         self.pwm_init()
         self.queue = []
         self.current_val = 0.0
         self.stop_op = False
+        self.daemon = True
 
     def pwm_init(self):
         self.pi.set_PWM_range(self.gpio, self.steps)
@@ -49,6 +50,7 @@ class Dimmer(threading.Thread):
                            'end_val': end_val,
                            'duration': duration,
                            'step_size': step_size})
+        logging.debug('queue=%s' % self.queue)
 
     def destroy(self):
         self.pi.set_PWM_dutycycle(self.gpio, 0)
@@ -70,7 +72,7 @@ class Dimmer(threading.Thread):
 
         t = start_step
         while self.signal and not self.stop_op and step_count > 0:
-            logging.debug('- set dutycycle for t=%f => %f' % (t, self.dutycycle(t)))
+            #logging.debug('- set dutycycle for t=%f => %f' % (t, self.dutycycle(t)))
             self.pi.set_PWM_dutycycle(self.gpio, self.dutycycle(t))
             time.sleep(step_delay)
             t += step_size
@@ -83,8 +85,8 @@ class Dimmer(threading.Thread):
         logging.debug('Enter dimmer loop')
         while self.signal:
             while self.signal and len(self.queue) > 0 and not self.stop_op:
-                logging.debug('Fetch op from queue')
-                op = self.queue.pop()
+                logging.debug('Fetch op from queue=%s' % self.queue)
+                op = self.queue.pop(0)
                 logging.debug('- op=%s' % op)
                 self.run_op(op)
 
@@ -97,13 +99,12 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG, format='[%(levelname)s] (%(threadName)-10s) %(message)s')
 
     logging.debug('dimmer test (start)')
-    dimmer = Dimmer(27)
-    dimmer.daemon = True
+    dimmer = Dimmer(27, 500, 500)
     dimmer.start()
-
-    dimmer.add(1.0, 0.0, 1.0, -1)
-    dimmer.add(0.0, 1.0, 1.0, 1)
-    dimmer.add(0.0, 1.0, 5.0, 4)
+    dimmer.add(0.0, 1.0, 0.0, 1)
+    dimmer.add(1.0, 0.0, 0.0, -1)
+    dimmer.add(0.0, 1.0, 0.0, 1)
+    dimmer.add(1.0, 0.0, 0.0, -1)
 
     try:
         time.sleep(1000)
