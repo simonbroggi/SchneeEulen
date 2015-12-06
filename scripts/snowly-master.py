@@ -119,7 +119,7 @@ log.setLevel(conf.LOG_LEVEL)
 log.debug("Snowly Server initializing at %s:%s" % (conf.MASTER_IP, conf.MASTER_PORT))
 server = SnowlyServer(localaddr=(conf.MASTER_IP, conf.MASTER_PORT), conf=conf)
 
-# add actions
+# add strategies
 #server.register_action(PrintStateAction(), 999)
 #server.register_action(SingleSnowHare(), 0)
 #server.register_action(MultipathBase(config='multipath-left.csv', use_inputs=[0]), 0)

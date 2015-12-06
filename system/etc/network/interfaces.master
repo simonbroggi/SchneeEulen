@@ -1,7 +1,8 @@
 auto lo
 iface lo inet loopback
 
-
+# turn off power management on wireless devices
+wireless-power off
 
 # configure dhcp,ipv6 on ethernet port eth0
 auto eth0
@@ -19,17 +20,6 @@ iface eth0 inet6 auto
 #        wpa-psk "schneehasen" 
 
 
-# this config is for adhoc wireless networking -> not used!
-# see https://wiki.debian.org/WiFi/AdHoc
-#auto wlan0
-#iface wlan0 inet static
-#	address 192.168.2.1
-#	netmask 255.255.255.0
-#	wireless-channel 1
-#	wireless-essid Schneehasen 
-#	wireless-mode ad-hoc
-
-
 # this config is for access point (master!)
 allow-hotplug wlan0
 iface wlan0 inet static
@@ -37,6 +27,17 @@ iface wlan0 inet static
         netmask 255.255.255.0
         network 10.0.0.0
         broadcast 10.0.0.255
+
+# this config is for adhoc wireless networking -> not used!
+# see https://wiki.debian.org/WiFi/AdHoc
+#auto wlan0
+#iface wlan0 inet static
+#	address 192.168.2.1
+#	netmask 255.255.255.0
+#	wireless-channel 1
+#	wireless-essid Schneehasen
+#	wireless-mode ad-hoc
+
 
 # routing from wlan to eth0
 up iptables-restore < /etc/iptables.ipv4.nat
