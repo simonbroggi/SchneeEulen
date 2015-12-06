@@ -6,6 +6,9 @@ import pigpio
 import consts
 from time import sleep
 from actors import led
+from actors import servo
+from strategies.base import BaseStrategy
+from strategies.randomized import SimpleRandomizedStrategy
 
 __exitSignal__ = False
 
@@ -19,8 +22,18 @@ class SnowlyClient(ConnectionListener):
     host = ''
     port = 0
     state = consts.STATE_DISCONNECTED
-    isConnecting = 0
+    is_connecting = 0
     count = 0
+    strategies = {}
+    active_strategy = None
+    connect_retry_time = 0
+
+    # actors
+    dimmers = {}
+    servos = {}
+
+    # sensors
+    distance_sensors = {}
 
     global __exitSignal__
 
@@ -29,19 +42,61 @@ class SnowlyClient(ConnectionListener):
         self.port = port
         self.connect()
 
+        self.initSensors()
+        self.initActors()
+
+    def initSensors(self):
+        None
+
+    def initActors(self):
         self.initDimmers()
         self.initServos()
 
+    """ Initialize independent dimmer threads """
     def initDimmers(self):
-        log.debug("initializing actors dimmers: %s", conf.LIGHT_PINS)
-        for i in conf.LIGHT_PINS.keys():
-            dim = led.Dimmer(27, 500, 500)
-            dim.start()
-            dim.add(0.0, 1.0, 0.0, 1)
-            dim.add(1.0, 0.0, 0.0, -1)
+        logging.debug("initializing dimmers: %s", conf.LIGHT_DIMMERS)
+        for key in conf.LIGHT_DIMMERS.keys():
+            dimmer_conf = conf.LIGHT_DIMMERS[key]
+            logging.debug("- dimmer %s gpio=%s steps=%s freq=%s" % (key,dimmer_conf['gpio'],dimmer_conf['steps'],dimmer_conf['freq']))
+            self.dimmers[key] = led.Dimmer(dimmer_conf['gpio'], dimmer_conf['steps'], dimmer_conf['freq'])
+            self.dimmers[key].start()
 
+            #for j in range(0,1):
+            #    dim.add(0.0, 1.0, 4.0, 1)
+            #    dim.add(1.0, 0.0, 4.0, -1)
+
+    """ Initialize independent servo threads """
     def initServos(self):
-        None
+        logging.debug("initializing servos: %s", conf.SERVO_CONTROL)
+        for key in conf.SERVO_CONTROL.keys():
+            servo_conf = conf.SERVO_CONTROL[key]
+            self.servos[key] = servo.Servo(servo_conf['gpio'], 0.0, 180.0)
+            self.servos[key].start()
+
+    def shutdownDimmers(self):
+        logging.debug("shutting down dimmer threads")
+        for dimmer in self.dimmers.items():
+            dimmer[1].signal_exit()
+            while dimmer[1].is_alive():
+                sleep(0.05)
+
+        logging.debug("all dimmers shutdown gracefully")
+
+    def shutdownServos(self):
+        logging.debug("shutting down all servo threads")
+        for servo in self.servos.items():
+            servo[1].signal_exit()
+            while servo[1].is_alive():
+                sleep(0.05)
+
+        logging.debug("all servos shutdown gracefully")
+
+    def get_dimmer(self, key):
+        #logging.debug(self.dimmers)
+        return self.dimmers[key]
+
+    def get_servo(self, key):
+        return self.servos[key]
 
     def Network(self, data):
         log.debug('received network data: %s' % data)
@@ -50,31 +105,31 @@ class SnowlyClient(ConnectionListener):
     def Network_connected(self, data):
         log.debug("connected to the server")
         self.state = consts.STATE_CONNECTED
-        self.isConnecting = 0
+        self.is_connecting = 0
         self.send_config()
 
     def Network_disconnected(self, data):
         log.debug("disconnected from the server")
         self.state = consts.STATE_DISCONNECTED
-        self.isConnecting = 0
+        self.is_connecting = 0
 
     def Network_error(self, data):
         log.debug("error: %s" % data['error'][1])
         self.state = consts.STATE_DISCONNECTED
-        self.isConnecting = 0
+        self.is_connecting = 0
 
     def Network_setoutput(self, data):
         None
 
     def connect(self):
         log.debug("Connecting to "+''.join((self.host, ':'+str(self.port))))      
-        self.isConnecting = 1
+        self.is_connecting = 1
         self.Connect((self.host, self.port))
         
     def reconnect(self):
         # if we get disconnected, only try once per second to re-connect
         log.debug("no connection or connection lost - trying reconnection in %ds..." % conf.NETWORK_CONNECT_RETRY_DELAY)
-        sleep(conf.NETWORK_CONNECT_RETRY_DELAY)
+        self.connect_retry_time = conf.NETWORK_CONNECT_RETRY_DELAY + time.time()
         self.connect()
 
     def send_config(self):
@@ -105,27 +160,39 @@ class SnowlyClient(ConnectionListener):
                         self.event_input(channel, val)
                     except:
                         print 'Unknown command'
-                    
+
                 return True
         return False
 
     # def run_actions(self):
-    #     ordered_actions = sorted(self.actions.items(), key=lambda x: x[1]['weight'])
+    #     ordered_actions = sorted(self.strategies.items(), key=lambda x: x[1]['weight'])
     #
     #     for action in ordered_actions:
     #         action[0].update(self.current_time, self.delta_time)
 
-    # def register_action(self, action, weight):
-    #     if not isinstance(action, Action):
-    #         raise BaseException("action doesn't have base type Action", action)
-    #
-    #     self.actions[action] = {
-    #         'weight': weight
-    #     }
-    #     action.registered({'master': self, 'framerate': self.framerate})
+    def register_strategy(self, strategy, weight):
+        if not issubclass(strategy, BaseStrategy):
+            raise BaseException("Strategy does not have base type BaseStrategy", strategy)
 
-    # def remove_action(self, action):
-    #     del self.actions[action]
+        self.strategies[strategy] = {
+            'weight': weight
+        }
+
+        #strategy.registered({'owner': self })
+        logging.debug("registered strategy %s" % strategy)
+
+    def remove_strategy(self, strategy):
+        del self.strategies[strategy]
+
+    def switch_strategy(self, new_strategy):
+        logging.debug("switching strategy to %s" % new_strategy)
+        if self.active_strategy:
+            logging.debug('signalling exit to strategy %s' % self.active_strategy)
+            self.active_strategy.signal_exit()
+
+        self.active_strategy = new_strategy(self)
+        self.active_strategy.start()
+        logging.debug('active strategy is now %s' % self.active_strategy)
 
     def Loop(self):
         self.Pump()
@@ -137,11 +204,25 @@ class SnowlyClient(ConnectionListener):
             self.count = 0
         self.count += + 1
 
-        if self.state == consts.STATE_DISCONNECTED and not self.isConnecting:
-            self.reconnect()
+        if self.state == consts.STATE_DISCONNECTED and not self.is_connecting:
+            #logging.debug('%s' % (self.connect_retry_time - time.time()))
+            if self.connect_retry_time - time.time() <= 0:
+                self.reconnect()
 
+        if self.active_strategy is None:
+            strategies = sorted(self.strategies.items(), key=lambda x: x[1]['weight'])
+            if len(strategies) > 0:
+                logging.debug("no strategy set, choosing strategy according to weight: %s" % strategies[0][0])
+                self.switch_strategy(strategies[0][0])
 
+    def shutdown(self):
+        logging.debug('terminate snowly client')
+        if self.active_strategy:
+            self.active_strategy.signal_exit()
+            sleep(2.0)
 
+        self.shutdownDimmers()
+        self.shutdownServos()
 
 # read configuration
 config_file = 'conf'
@@ -160,6 +241,11 @@ log.setLevel(conf.LOG_LEVEL)
 log.debug("Creating client %s" % conf.CLIENT_ID)
 client = SnowlyClient(conf.CLIENT_MASTER_IP, conf.CLIENT_MASTER_PORT)
 
+# register client strategies (stoppable threads)
+client.register_strategy(BaseStrategy, 999)
+client.register_strategy(SimpleRandomizedStrategy, 0)
+
+
 # main thread
 try:
     while not __exitSignal__:
@@ -171,6 +257,7 @@ try:
 except KeyboardInterrupt:
     log.debug("Keyboard interrupt")
     __exitSignal__ = True
+    client.shutdown()
 
 log.debug("Exit client %s" % conf.CLIENT_ID)
 
