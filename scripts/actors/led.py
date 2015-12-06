@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 # coding=utf-8
-import time, sys, random, math
+import time, sys, math
 import threading
 import pigpio
 import logging
@@ -93,6 +93,11 @@ class Dimmer(threading.Thread):
             while self.stop_op and self.signal:
                 time.sleep(0.01)
 
+        logging.debug("terminating led dimmer on gpio=%s gracefully" % self.gpio)
+        self.destroy()
+
+    def signal_exit(self):
+        self.signal = False
 
 if __name__ == "__main__":
     log = logging.getLogger(__name__)
@@ -110,9 +115,8 @@ if __name__ == "__main__":
         time.sleep(1000)
     except KeyboardInterrupt:
         print '- interrupt -'
-        dimmer.signal = False
+        dimmer.signal_exit()
         time.sleep(1)
         dimmer.destroy()
-
 
     logging.debug('dimmer test (end)')
