@@ -1,5 +1,5 @@
 import sys
-from base import Action
+from strategies.base import Action
 
 
 class PrintStateAction(Action):

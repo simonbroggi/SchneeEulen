@@ -1,6 +1,6 @@
-from base import Action
+from strategies.base import Action
 import csv
-import random
+import strategies.random
 import time
 
 class MultipathBase(Action):
@@ -65,11 +65,11 @@ class MultipathBase(Action):
         """
         print time.time(), 'event_input_changed', num, val
         if num in set(self.use_inputs) and val > 0:
-            speed_factor = random.random()
+            speed_factor = strategies.random.random()
             # temp for safer debugging
             speed_factor = self.master.conf.DEFAULT_SPEED_FACTOR # 1.5
             # changed 2014-12-13
-            speed_factor = random.uniform(0.8, 2.0)
+            speed_factor = strategies.random.uniform(0.8, 2.0)
             hare = ('START', self.timer * speed_factor, speed_factor)
             self.hares += [hare]
 
@@ -78,7 +78,7 @@ class MultipathBase(Action):
             print self.hares
 
     def get_activation_delay(self):
-        val = random.randrange(self.master.conf.INPUT_ACTIVATION_DELAY[0], self.master.conf.INPUT_ACTIVATION_DELAY[1]) * self.framerate
+        val = strategies.random.randrange(self.master.conf.INPUT_ACTIVATION_DELAY[0], self.master.conf.INPUT_ACTIVATION_DELAY[1]) * self.framerate
         print 'new activation delay:', val
         return val
 
@@ -137,7 +137,7 @@ class MultipathBase(Action):
             self.hares[hare_num] = (pos, count - 1, speed_factor)
         else:
             # calculate probable move (no move=stay)
-            rnd = random.uniform(0, 1)
+            rnd = strategies.random.uniform(0, 1)
             prob_sum = 0.0
             decision = pos
             if self.DEBUG:
@@ -248,10 +248,10 @@ class IdleAnimation(MultipathBase):
             if has_input:
                 print "IDLE: timer up but has input - not triggering hare -----"
 
-            trigger = random.random() <= self.master.conf.IDLE_PROBABILITY
+            trigger = strategies.random.random() <= self.master.conf.IDLE_PROBABILITY
             if (not has_input) and trigger and (len(self.hares) < self.master.conf.IDLE_LIMIT):
                 print "--> IDLE: launch a rabbit"
-                speed_factor = random.uniform(0.5, 2.5)
+                speed_factor = strategies.random.uniform(0.5, 2.5)
                 self.hares += [('START', self.timer, speed_factor)]
                 print self.hares
 
