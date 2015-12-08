@@ -199,8 +199,9 @@ class SnowlyClient(ConnectionListener):
         connection.Pump()
 
         # test & keep alive master
-        if self.count == 1000:
-            self.Send({"action": "mouse", "size": "large"})
+        if self.count == 20:
+            #self.Send({"action": "mouse", "size": "large"})
+            #logging.debug('heartbeat in loop')
             self.count = 0
         self.count += + 1
 
