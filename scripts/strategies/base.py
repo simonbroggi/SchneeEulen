@@ -18,17 +18,17 @@ class BaseStrategy(threading.Thread):
         #""":type : SnowlyClient"""
 
     def wait(self, seconds):
-        minSleepTime = min(0.01, seconds)
-        while seconds > 0.0 and not self.__signalExit__:
+        logging.debug("wait %s" % seconds)
+        startTime = time.time()
+        minSleepTime = min(0.001, seconds)
+        while time.time() - startTime < seconds and not self.__signalExit__:
             time.sleep(minSleepTime)
-            seconds -= minSleepTime # might be improved with accurate measurement using time.time()
 
     def run(self):
         logging.debug('- BaseStrategy.run __signalExit__=%s' % self.__signalExit__)
         while not self.__signalExit__:
             logging.debug("-- BaseStrategy.run step")
             self.wait(1.0)
-            pass
 
     def signal_exit(self):
         logging.debug('Thread exit signalled - terminating gracefully')
