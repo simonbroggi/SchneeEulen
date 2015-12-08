@@ -8,7 +8,7 @@ pi = pigpio.pi() # connect to local Pi
 
 steps = 1000
 pi.set_PWM_range(27, steps)
-pi.set_PWM_frequency(27, 100)
+pi.set_PWM_frequency(27, 500)
 
 def dutycycle(val):
    ## val = max(min(val, steps), 0)
@@ -42,10 +42,16 @@ def dimmer(pin, start_val, end_val, duration, step_size = 1):
    return
 
 
-t = threading.Thread(target=dimmer, args=(27, 0.0, 1.0, 0.5, 1))
+t = threading.Thread(target=dimmer, args=(27, 0.0, 1.0, 2.5, 1))
 t.start()
 t.join()
-t = threading.Thread(target=dimmer, args=(27, 1.0, 0.0, 0.5, -1))
+t = threading.Thread(target=dimmer, args=(27, 1.0, 0.0, 2.5, -1))
+t.start()
+t.join()
+t = threading.Thread(target=dimmer, args=(27, 0.0, 1.0, 2.5, 1))
+t.start()
+t.join()
+t = threading.Thread(target=dimmer, args=(27, 1.0, 0.0, 2.5, -1))
 t.start()
 t.join()
 
