@@ -5,7 +5,7 @@ import time, sys, math
 import threading
 import pigpio
 import logging
-
+import Queue
 
 class Servo(threading.Thread):
     signal = True
@@ -13,7 +13,7 @@ class Servo(threading.Thread):
     min_angle = 0
     max_angle = 180
     pw_min = 800
-    pw_max = 2500
+    pw_max = 1500
     freq = 50
     gpio = None
 
@@ -30,9 +30,7 @@ class Servo(threading.Thread):
         self.pw_max = pw_max
         self.freq = freq
         self.gpio = gpio
-
-        self.pwm_init()
-        self.queue = []
+        self.queue = Queue.Queue()
         self.current_val = 0.0
 
     def pwm_init(self):
@@ -54,7 +52,7 @@ class Servo(threading.Thread):
         if clear:
             self.clear()
 
-        self.queue.append({'start_angle': start_angle,
+        self.queue.put({'start_angle': start_angle,
                            'end_angle': end_angle,
                            'duration': duration,
                            'step_size': step_size})
@@ -81,7 +79,7 @@ class Servo(threading.Thread):
         if start_pw > end_pw:
             step_size = - abs(op['step_size'])
 
-        print "servo worker on gpio=%s start_pw=%s end_pw=%s step_size=%s duration=%s" % (self.gpio, start_pw, end_pw, step_size, op['duration'])
+        logging.debug("servo worker on gpio=%s start_pw=%s end_pw=%s step_size=%s duration=%s" % (self.gpio, start_pw, end_pw, step_size, op['duration']))
 
         pw = start_pw
         while self.signal and not self.stop_op and step_count > 0:
@@ -93,11 +91,12 @@ class Servo(threading.Thread):
         self.pi.set_servo_pulsewidth(self.gpio, end_pw)
 
     def run(self):
+        self.pwm_init()
         logging.debug('Servo loop gpio=%s' % self.gpio)
         while self.signal:
-            while self.signal and len(self.queue) > 0 and not self.stop_op:
+            while self.signal and self.queue.qsize() > 0 and not self.stop_op:
                 logging.debug('Fetch op from queue=%s' % self.queue)
-                op = self.queue.pop(0)
+                op = self.queue.get()
                 logging.debug('- op=%s' % op)
                 self.run_op(op)
 
