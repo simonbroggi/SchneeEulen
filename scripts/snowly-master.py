@@ -32,14 +32,6 @@ class SnowlyChannel(Channel):
         # insert and map client inputs/outputs
         self._server.update_clients(self, data)
 
-    def Network_mouse(self, data):
-        log.debug("custom action (test): mouse")
-        log.debug("---> snowy owl got mouse" % data)
-
-    def Network_input(self, data):
-        log.debug("received input from client " % data)
-        self._server.update_input(self, data)
-
     def Close(self):
         self._server.remove_client(self)
 
