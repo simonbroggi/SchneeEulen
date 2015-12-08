@@ -5,9 +5,11 @@ import time, sys, math
 import threading
 import pigpio
 import logging
-
+import Queue
 
 class Dimmer(threading.Thread):
+    MAX_QUEUE_SIZE = 50
+
     def __init__(self, gpio_led, steps=1000, freq=100):
         logging.debug('Initializing dimmer gpio=%s steps=%s freq=%s' % (gpio_led, steps, freq))
         threading.Thread.__init__(self)
@@ -17,8 +19,7 @@ class Dimmer(threading.Thread):
         self.steps = steps
         self.freq = freq
         self.gpio = gpio_led
-        self.pwm_init()
-        self.queue = []
+        self.queue = Queue.Queue(self.MAX_QUEUE_SIZE)
         self.current_val = 0.0
         self.stop_op = False
         self.daemon = True
@@ -46,7 +47,7 @@ class Dimmer(threading.Thread):
         if clear:
             self.clear()
 
-        self.queue.append({'start_val': start_val,
+        self.queue.put({'start_val': start_val,
                            'end_val': end_val,
                            'duration': duration,
                            'step_size': step_size})
@@ -83,15 +84,17 @@ class Dimmer(threading.Thread):
 
     def run(self):
         logging.debug('Enter dimmer loop')
+        self.pwm_init()
+
         while self.signal:
-            while self.signal and len(self.queue) > 0 and not self.stop_op:
+            while self.signal and self.queue.qsize() > 0 and not self.stop_op:
                 logging.debug('Fetch op from queue=%s' % self.queue)
-                op = self.queue.pop(0)
+                op = self.queue.get()
                 logging.debug('- op=%s' % op)
                 self.run_op(op)
 
-            while self.stop_op and self.signal:
-                time.sleep(0.01)
+            #while self.stop_op and self.signal:
+            #    time.sleep(0.001)
 
         logging.debug("terminating led dimmer on gpio=%s gracefully" % self.gpio)
         self.destroy()
