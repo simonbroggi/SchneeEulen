@@ -207,7 +207,8 @@ if __name__ == '__main__':
     snowlynet = SnowlyNet(False)
     snowlynet.start()
     try:
-        snowlynet.join()
+        while True and snowlynet.is_alive():
+            sleep(1)
     except KeyboardInterrupt:
         logging.debug('interrupted - signalling exit')
         snowlynet.signal_exit()
