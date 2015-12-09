@@ -20,15 +20,20 @@ class SimpleMasterStrategy(StrategyThread):
         logging.debug('- using RandomStrategy.run')
 
         while not self.__signalExit__:
-            logging.debug("randomized self.wait(n)")
+            logging.debug('- waiting for clients to sync')
+            # self.main_thread.send_command({
+            #     'command': 'sync'
+            # })
+            # self.wait(2.0)
 
             self.main_thread.send_command(self.main_thread.get_client_ids(), {
-                "action": "dimmer",
-                "dimmer_id": "left_eye",
+                "command": "dim",
+                "id": "eye_left",
                 "start_val": 0.0,
                 "end_val": 1.0,
                 "duration": 1.0,
-                "step": 1
+                "step": 1,
+                "clear": False
             })
             self.wait(5.0)
 

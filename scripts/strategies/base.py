@@ -1,21 +1,23 @@
+#!/usr/bin/python
+
 import time, sys, random, math
 import threading
 import logging
 
 
-class BaseStrategy(threading.Thread):
+class StrategyThread(threading.Thread):
     subthreads = []
     main_thread = None
+    """:type : SnowlyClient"""
 
     """
-    Base class to execute strategies (similar to Unity's GameObject)
+    Base class to execute strategies
     """
     def __init__(self, main_thread):
         threading.Thread.__init__(self)
         self.daemon = True
         self.__signalExit__ = False
         self.main_thread = main_thread
-        #""":type : SnowlyClient"""
 
     def wait(self, seconds):
         logging.debug("wait %s" % seconds)
@@ -33,3 +35,5 @@ class BaseStrategy(threading.Thread):
     def signal_exit(self):
         logging.debug('Thread exit signalled - terminating gracefully')
         self.__signalExit__ = True
+
+

@@ -1,14 +1,17 @@
 #!/usr/bin/python
-from PodSixNet.Connection import connection, ConnectionListener
-import time, os, sys, select, threading, socket
 import logging
-import pigpio
-import consts
+import os
+import select
+import sys
+import time
 from time import sleep
+
+import consts
+from PodSixNet.Connection import connection, ConnectionListener
 from actors import led
 from actors import servo
-from strategies.base import BaseStrategy
-from strategies.randomized import SimpleRandomizedStrategy
+from strategies.base import StrategyThread
+from strategies.client.simple import SimpleRandomizedStrategy
 
 __exitSignal__ = False
 
@@ -34,6 +37,9 @@ class SnowlyClient(ConnectionListener):
 
     # sensors
     distance_sensors = {}
+
+    slave_mode = False
+    slave_keepalive = 0
 
     global __exitSignal__
 
@@ -146,6 +152,41 @@ class SnowlyClient(ConnectionListener):
             'val': val
         })
 
+    def Network_sync(self, data):
+        logging.debug('master command: sync %s' % data)
+        if self.active_strategy is not None:
+            self.switch_strategy(None)
+
+        self.slave_mode = True
+        self.slave_keepalive = time.time()
+
+    def Network_command(self, data):
+        logging.debug('master command: command %s' % data)
+        if self.active_strategy is not None:
+            self.switch_strategy(None)
+
+        self.slave_mode = True
+        self.slave_keepalive = time.time()
+
+        self.process_command(data)
+
+    def process_command(self, data):
+        logging.debug('processing command %s' % data['command'])
+        if data['command'] == 'dim':
+            try:
+                dimmer = self.dimmers[data['id']]
+                dimmer.add(data['start_val'], data['end_val'], data['duration'], data['step'], data['clear'])
+            except Exception as e:
+                logging.error("error with dim command: %s" % e)
+
+        elif data['command'] == 'move':
+            try:
+                servo = self.servos[data['id']]
+                servo.add(data['start_angle'], data['end_angle'], data['duration'], data['step'], data['clear'])
+            except Exception as e:
+                logging.error("error with dim command: %s" % e)
+
+
     def check_keyboard_commands(self):
         r, w, x = select.select([sys.stdin], [], [], 0.0001)
         for s in r:
@@ -164,6 +205,7 @@ class SnowlyClient(ConnectionListener):
                 return True
         return False
 
+
     # def run_actions(self):
     #     ordered_actions = sorted(self.strategies.items(), key=lambda x: x[1]['weight'])
     #
@@ -171,8 +213,8 @@ class SnowlyClient(ConnectionListener):
     #         action[0].update(self.current_time, self.delta_time)
 
     def register_strategy(self, strategy, weight):
-        if not issubclass(strategy, BaseStrategy):
-            raise BaseException("Strategy does not have base type BaseStrategy", strategy)
+        if not issubclass(strategy, StrategyThread):
+            raise BaseException("Strategy does not have base type StrategyThread", strategy)
 
         self.strategies[strategy] = {
             'weight': weight
@@ -190,18 +232,21 @@ class SnowlyClient(ConnectionListener):
             logging.debug('signalling exit to strategy %s' % self.active_strategy)
             self.active_strategy.signal_exit()
 
-        self.active_strategy = new_strategy(self)
-        self.active_strategy.start()
-        logging.debug('active strategy is now %s' % self.active_strategy)
+        if new_strategy is not None:
+            self.active_strategy = new_strategy(self)
+            self.active_strategy.start()
+            logging.debug('active strategy is now %s' % self.active_strategy)
+        else:
+            logging.debug('None strategy selected')
+            self.active_strategy = None
 
     def Loop(self):
         self.Pump()
         connection.Pump()
 
-        # test & keep alive master
-        if self.count == 20:
-            #self.Send({"action": "mouse", "size": "large"})
-            #logging.debug('heartbeat in loop')
+        # master keep alive
+        if self.count == 100:
+            self.Send({"action": "mouse", "size": "large"})
             self.count = 0
         self.count += + 1
 
@@ -210,7 +255,12 @@ class SnowlyClient(ConnectionListener):
             if self.connect_retry_time - time.time() <= 0:
                 self.reconnect()
 
-        if self.active_strategy is None:
+        if self.slave_mode and (time.time() - self.slave_keepalive > consts.SLAVE_TIMEOUT):
+            logging.debug('---> no command from master within %s seconds' % consts.SLAVE_TIMEOUT)
+            logging.debug('terminating slave mode...')
+            self.slave_mode = False
+
+        if not self.slave_mode and self.active_strategy is None:
             strategies = sorted(self.strategies.items(), key=lambda x: x[1]['weight'])
             if len(strategies) > 0:
                 logging.debug("no strategy set, choosing strategy according to weight: %s" % strategies[0][0])
@@ -243,7 +293,7 @@ log.debug("Creating client %s" % conf.CLIENT_ID)
 client = SnowlyClient(conf.CLIENT_MASTER_IP, conf.CLIENT_MASTER_PORT)
 
 # register client strategies (stoppable threads)
-client.register_strategy(BaseStrategy, 999)
+client.register_strategy(StrategyThread, 999)
 client.register_strategy(SimpleRandomizedStrategy, 0)
 
 
