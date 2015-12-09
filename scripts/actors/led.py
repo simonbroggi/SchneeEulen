@@ -47,6 +47,12 @@ class Dimmer(threading.Thread):
         if clear:
             self.clear()
 
+        if start_val == -1:
+            start_val = self.current_val
+
+        if end_val == -1:
+            end_val = self.current_val
+
         self.queue.put({'start_val': start_val,
                            'end_val': end_val,
                            'duration': duration,
@@ -74,7 +80,8 @@ class Dimmer(threading.Thread):
         t = start_step
         while self.signal and not self.stop_op and step_count > 0:
             #logging.debug('- set dutycycle for t=%f => %f' % (t, self.dutycycle(t)))
-            self.pi.set_PWM_dutycycle(self.gpio, self.dutycycle(t))
+            self.current_val = self.dutycycle(t)
+            self.pi.set_PWM_dutycycle(self.gpio, self.current_val)
             time.sleep(step_delay)
             t += step_size
             step_count -= 1
