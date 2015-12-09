@@ -3,11 +3,11 @@ import logging
 import threading
 import pigpio
 from time import sleep
-from base import BaseStrategy
+from strategies.base import StrategyThread
 
-class Breathing(BaseStrategy):
+class Breathing(StrategyThread):
     def __init__(self, main_thread):
-        BaseStrategy.__init__(self, main_thread)
+        StrategyThread.__init__(self, main_thread)
 
     def run(self):
         while not self.__signalExit__:
@@ -20,12 +20,12 @@ class Breathing(BaseStrategy):
         logging.debug('breathing finished')
 
 
-class SimpleRandomizedStrategy(BaseStrategy):
+class SimpleRandomizedStrategy(StrategyThread):
     """
     Let's a single snow hare run step-by-step linearly through all boxes.
     """
     def __init__(self, main_thread):
-        BaseStrategy.__init__(self, main_thread)
+        StrategyThread.__init__(self, main_thread)
 
     def twinkle(self, eye=0):
         return
