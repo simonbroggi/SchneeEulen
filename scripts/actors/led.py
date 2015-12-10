@@ -39,7 +39,8 @@ class Dimmer(threading.Thread):
 
     def clear(self):
         logging.debug('Clear queue')
-        del self.queue[:]
+        with self.queue.mutex:
+            self.queue.queue.clear()
 
     def add(self, start_val, end_val, duration, step_size=1, clear=False):
         logging.debug('Add op start_val=%.2f end_val=%.2f duration=%.2f step_size=%s' % (start_val, end_val, duration, step_size))
