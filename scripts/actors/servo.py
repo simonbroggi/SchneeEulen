@@ -12,8 +12,8 @@ class Servo(threading.Thread):
     stop_op = False
     min_angle = 0
     max_angle = 180
-    pw_min = 800
-    pw_max = 1500
+    pw_min = 600
+    pw_max = 1800
     freq = 50
     gpio = None
 
@@ -43,7 +43,8 @@ class Servo(threading.Thread):
 
     def clear(self):
         logging.debug('Clear queue')
-        del self.queue[:]
+        with self.queue.mutex:
+            self.queue.queue.clear()
 
     """ Adds a movement to the current queue. If clear flag is set will empty the queue beforehand. """
     def add(self, start_angle, end_angle, duration, step_size=1, clear=False):
@@ -52,6 +53,13 @@ class Servo(threading.Thread):
         if clear:
             self.clear()
 
+
+        # if start_angle == -1:
+        #     start_angle = self.current_val
+        #
+        # if end_angle == -1:
+        #     end_angle = self.current_val
+        #
         self.queue.put({'start_angle': start_angle,
                            'end_angle': end_angle,
                            'duration': duration,
@@ -84,6 +92,7 @@ class Servo(threading.Thread):
         pw = start_pw
         while self.signal and not self.stop_op and step_count > 0:
             self.pi.set_servo_pulsewidth(self.gpio, pw)
+            self.current_val = pw
             pw += step_size
             time.sleep(step_delay)
             step_count -= 1
