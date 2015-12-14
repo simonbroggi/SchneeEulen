@@ -1,11 +1,14 @@
 # rsync files to master 10.0.0.1
 rsync --progress -avz --exclude '.git' --exclude 'system' --exclude '.idea' --exclude '*.pyc' --exclude 'libs/cherrypy/build' --exclude 'CherryPy.egg*' --exclude '.CherryPy*' --exclude 'cherrypy/dist' --exclude 'libs' \
-    -e "ssh -A -t pi@192.168.3.5" . :/home/pi/schnee-eulen/
+    -e "ssh -A -t pi@10.0.0.1" . :/home/pi/schnee-eulen/
 
 # rsync files to slave owl-slave-01
 rsync --progress -avz --exclude '.git' --exclude 'system' --exclude '.idea' --exclude '*.pyc' --exclude 'libs/cherrypy/build' --exclude 'CherryPy.egg*' --exclude '.CherryPy*' --exclude 'cherrypy/dist' --exclude 'libs' \
     -e "ssh owl-slave-01" . :/home/pi/schnee-eulen/
 
+# rsync files to slave owl-slave-02
+rsync --progress -alvz --exclude '.git' --exclude 'system' --exclude '.idea' --exclude '*.pyc' --exclude 'libs/cherrypy/build' --exclude 'CherryPy.egg*' --exclude '.CherryPy*' --exclude 'cherrypy/dist' --exclude 'libs' \
+    -e "ssh owl-slave-02" . :/home/pi/schnee-eulen/
 # to make commands to slave work, best use this in .ssh/config:
 #Host owl-master
 #        HostName 192.168.3.5
