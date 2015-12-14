@@ -25,12 +25,12 @@ LIGHT_DIMMERS = {
         'freq': 1000
     },
      'body': {
-        'gpio': 22,
+        'gpio': 27,
         'steps': 500,
         'freq': 500
     },
     'eye_right': {
-        'gpio': 27,
+        'gpio': 22,
         'steps': 500,
         'freq': 1000
     }

@@ -20,17 +20,17 @@ CLIENT_ID = 'KLAUS'
 # dimmer configuration per client (should be 3 per owl-client, max 9 per raspberry)
 LIGHT_DIMMERS = {
     'eye_left': {
-        'gpio': 16,
+        'gpio': 21,
         'steps': 500,
         'freq': 1000
     },
      'body': {
-        'gpio': 20,
+        'gpio': 16,
         'steps': 500,
         'freq': 500
     },
     'eye_right': {
-        'gpio': 21,
+        'gpio': 20,
         'steps': 500,
         'freq': 1000
     }
