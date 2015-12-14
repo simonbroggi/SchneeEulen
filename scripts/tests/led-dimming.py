@@ -4,11 +4,13 @@ import time, sys, random, math
 import threading
 import pigpio
 
+gpio = 27
+
 pi = pigpio.pi() # connect to local Pi
 
 steps = 1000
-pi.set_PWM_range(27, steps)
-pi.set_PWM_frequency(27, 500)
+pi.set_PWM_range(gpio, steps)
+pi.set_PWM_frequency(gpio, 500)
 
 def dutycycle(val):
    ## val = max(min(val, steps), 0)
@@ -42,18 +44,18 @@ def dimmer(pin, start_val, end_val, duration, step_size = 1):
    return
 
 
-t = threading.Thread(target=dimmer, args=(27, 0.0, 1.0, 2.5, 1))
+t = threading.Thread(target=dimmer, args=(gpio, 0.0, 1.0, 2.5, 1))
 t.start()
 t.join()
-t = threading.Thread(target=dimmer, args=(27, 1.0, 0.0, 2.5, -1))
+t = threading.Thread(target=dimmer, args=(gpio, 1.0, 0.0, 2.5, -1))
 t.start()
 t.join()
-t = threading.Thread(target=dimmer, args=(27, 0.0, 1.0, 2.5, 1))
+t = threading.Thread(target=dimmer, args=(gpio, 0.0, 1.0, 2.5, 1))
 t.start()
 t.join()
-t = threading.Thread(target=dimmer, args=(27, 1.0, 0.0, 2.5, -1))
+t = threading.Thread(target=dimmer, args=(gpio, 1.0, 0.0, 2.5, -1))
 t.start()
 t.join()
 
-pi.set_PWM_dutycycle(27, 0)
+pi.set_PWM_dutycycle(gpio, 0)
 pi.stop()
