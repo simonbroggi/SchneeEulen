@@ -38,10 +38,10 @@ class BlinkingAgitation(StrategyThread):
 
     def run(self):
         while not self.__signalExit__:
-            self.eye_left.add(0.2, 1.0, 0.1, 6)
-            self.eye_left.add(1.0, 0.2, 0.1, 6)
-            self.eye_right.add(0.2, 1.0, 0.1, 6)
-            self.eye_right.add(1.0, 0.2, 0.1, 6)
+            self.eye_left.add(0.3, 0.05, 0.1, 6)
+            self.eye_left.add(0.05, 0.3, 0.1, 6)
+            self.eye_right.add(0.3, 0.05, 0.1, 6)
+            self.eye_right.add(0.05, 0.3, 0.1, 6)
             waitTime = random.uniform(5.0, 20.0)
             waitTime = waitTime * (1.0-self.agitation)
             waitTime += 0.3 # add minimum wait time
@@ -54,16 +54,18 @@ class LookingAgitation(StrategyThread):
     """
     def __init__(self, main_thread, agitation=0.5):
         StrategyThread.__init__(self, main_thread, 'LookingAgitation')
-        self.agitation =  agitation
+        self.agitation = agitation
         self.servo = self.main_thread.get_servo('head')
 
     def run(self):
         while not self.__signalExit__:
             waitTime = random.uniform(20.0, 30.0) * (1.0-self.agitation)
+            logging.debug('wait %f' % waitTime)
             self.wait(waitTime)
             head_angle = random.uniform(0.0, 180.0)
             turnTime = random.uniform(4.0, 20.0) * (1.0-self.agitation)
-            servo.add(last_angle, head_angle, turnTime, 1.0, True)
+            #logging.debug('%f %f %f' % (last_angle, head_angle, turnTime))
+            self.servo.add(float('nan'), head_angle, turnTime, 1.0, True)
             self.wait(turnTime)
             last_angle = head_angle
         logging.debug('looking finished')
