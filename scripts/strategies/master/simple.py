@@ -2,6 +2,7 @@
 import logging
 import threading
 import pigpio
+import random
 from time import sleep
 from strategies.base import StrategyThread
 
@@ -40,8 +41,8 @@ class SimpleMasterStrategy(StrategyThread):
             self.main_thread.send_command(self.main_thread.get_client_ids(), {
                 'command': 'move',
                 'id': 'head',
-                "start_angle": 0.0,
-                "end_angle": 180.0,
+                "start_angle": float('nan'),
+                "end_angle": random.uniform(0.0, 180.0),
                 'duration': 4.0,
                 'step': 1,
                 'clear': False
