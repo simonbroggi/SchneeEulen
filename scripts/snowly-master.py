@@ -170,7 +170,7 @@ class SnowlyNet(threading.Thread):
                 config_file = config_file[:-3]
 
         log.debug("Reading configuration from file %s.py" % config_file)
-        conf = __import__(config_file, globals(), locals(), [])
+        conf = __import__('conf.' + config_file, globals(), locals(), [config_file])
 
         # update log configuration
         log.setLevel(conf.LOG_LEVEL)
