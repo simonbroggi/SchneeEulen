@@ -26,8 +26,36 @@ class BreathingAgitation(StrategyThread):
             self.wait(breathTime)
         logging.debug('breathing finished')
 
+class HeartbeatAgitation(StrategyThread):
+    """Faster heartbeat when agitation is higher.
+
+    """
+    def __init__(self, main_thread, agitation = 0.5):
+        StrategyThread.__init__(self, main_thread, 'HeartbeatAgitation')
+        self.agitation = agitation
+        self.body_dimmer = self.main_thread.get_dimmer('body')
+        self.low = 0.2
+        self.mid = 0.4
+        self.midLow = 0.3
+        self.high = 0.7
+
+    def run():
+        while not self.__signalExit__:
+            beatTime = 8.0 * (1.0-self.agitation)
+            first = beatTime * 0.15
+            second = beatTime * 0.1
+            third = beatTime * 0.15
+            recover = beatTime - first - second - third
+            self.body_dimmer.add(self.low, self.mid, first)
+            self.body_dimmer.add(self.mid, self.midLow, second)
+            self.body_dimmer.add(self.midLow, self.high, third)
+            self.body_dimmer.add(self.high, self.low, recover)
+            self.wait(beatTime)
+        logging.debug('heartbeat finished')
+
 class BlinkingAgitation(StrategyThread):
     """Blinks (with both eyes) more frequent when agitation is higher.
+
     agitation: float between 0 and 1
     """
     def __init__(self, main_thread, agitation = 0.5):
@@ -56,15 +84,23 @@ class LookingAgitation(StrategyThread):
         StrategyThread.__init__(self, main_thread, 'LookingAgitation')
         self.agitation = agitation
         self.servo = self.main_thread.get_servo('head')
+        self.maxAngleVelocity = 30  # degrees per second
 
     def run(self):
+        last_angle = 90.0  # assuming a default
         while not self.__signalExit__:
             waitTime = random.uniform(20.0, 30.0) * (1.0-self.agitation)
             logging.debug('wait %f' % waitTime)
             self.wait(waitTime)
             head_angle = random.uniform(0.0, 180.0)
             turnTime = random.uniform(4.0, 20.0) * (1.0-self.agitation)
-            #logging.debug('%f %f %f' % (last_angle, head_angle, turnTime))
+            deltaAngle = head_angle - last_angle
+            if deltaAngle < 0:
+                deltaAngle *= -1
+            angleVelocity = deltaAngle / turnTime
+            if angleVelocity > self.maxAngleVelocity:
+                turnTime = deltaAngle / self.maxAngleVelocity
+            # logging.debug('%f %f %f' % (last_angle, head_angle, turnTime))
             self.servo.add(float('nan'), head_angle, turnTime, 1.0, True)
             self.wait(turnTime)
             last_angle = head_angle
@@ -94,7 +130,7 @@ class AutoStrategy(StrategyThread):
             self.wait(10)
 
             agitation = random.uniform(0.0, 1.0)
-            logging.debug("setting agitation to %f"%agitation)
+            logging.debug("setting agitation to %f" % agitation)
 
             breathing.agitation = agitation
             blinking.agitation = agitation
