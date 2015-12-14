@@ -5,6 +5,9 @@ import time, os, sys, select, threading, socket
 import logging
 import consts
 from time import sleep
+import datetime
+import dateutil.parser
+import subprocess
 import cherrypy
 
 from PodSixNet.Channel import Channel
@@ -200,6 +203,14 @@ class SnowlyWebService:
         self.net_server = net_server
         self.server = self.net_server.server
 
+    def set_datetime(self, datestring):
+        try:
+            dt = dateutil.parser.parse(datestring)
+            logging.debug('set system datetime to string %s (datetime %s)' % (datestring, dt))
+            subprocess.call("sudo date -s '{:}'".format(dt.strftime('%Y/%m/%d %H:%M:%S')), shell=True)
+        except:
+            logging.debug('error setting datetime')
+            
     # def _cp_dispatch(self, vpath):
     #     logging.debug('cp_dispatch:%s' % vpath)
     #     if len(vpath) == 1:
