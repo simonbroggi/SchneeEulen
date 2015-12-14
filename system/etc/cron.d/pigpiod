@@ -1,2 +1,2 @@
 # https://www.raspberrypi.org/forums/viewtopic.php?f=32&t=103752
-@reboot /usr/local/bin/pigpiod
+@reboot root /usr/local/bin/pigpiod
