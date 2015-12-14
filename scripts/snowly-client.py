@@ -4,6 +4,7 @@ import os
 import select
 import sys
 import time
+import signal
 from time import sleep
 
 import consts
@@ -321,6 +322,13 @@ client = SnowlyClient(conf.CLIENT_MASTER_IP, conf.CLIENT_MASTER_PORT)
 client.register_strategy(AutoStrategy, 0)
 #client.register_strategy(SimpleRandomizedStrategy, 1)
 #client.register_strategy(StrategyThread, 999)
+
+def clean_terminate(signal, frame):
+    __exitSignal__ = True
+    client.shutdown()
+    exit(0)
+
+signal.signal(signal.SIGTERM, clean_terminate)
 
 # main thread
 try:
