@@ -48,17 +48,10 @@ class Servo(threading.Thread):
 
     """ Adds a movement to the current queue. If clear flag is set will empty the queue beforehand. """
     def add(self, start_angle, end_angle, duration, step_size=1, clear=False):
-        logging.debug('Servo add op start_val=%.2f end_val=%.2f duration=%.2f step_size=%s' % (start_angle, end_angle, duration, step_size))
+        logging.debug('Servo add op start_angle=%.2f end_val=%.2f duration=%.2f step_size=%s' % (start_angle, end_angle, duration, step_size))
 
         if clear:
             self.clear()
-
-
-        if math.isnan(start_angle):
-            start_angle = self.current_val
-
-        if math.isnan(end_angle):
-            end_angle = self.current_val
 
         self.queue.put({'start_angle': start_angle,
                            'end_angle': end_angle,
@@ -90,8 +83,19 @@ class Servo(threading.Thread):
         #start_pw = self.pw_min + int(round(((op['start_angle'] - self.min_angle)/angle_range) * pulse_range))
         #end_pw = self.pw_min + int(round(((op['end_angle'] - self.min_angle)/angle_range) * pulse_range))
 
-        start_pw = self.angle_to_pwm(op['start_angle'])
-        end_pw = self.angle_to_pwm(op['end_angle'])
+        start_angle = op['start_angle']
+        if math.isnan(start_angle) and self.current_val is not None:
+            start_angle = self.current_val
+
+        end_angle = op['end_angle']
+        if math.isnan(end_angle) and self.current_val is not None:
+            end_angle = self.current_val
+
+        start_angle = min(max(start_angle, self.min_angle), self.max_angle)
+        end_angle = min(max(end_angle, self.min_angle), self.max_angle)
+
+        start_pw = self.angle_to_pwm(start_angle)
+        end_pw = self.angle_to_pwm(end_angle)
 
         step_count = abs((end_pw - start_pw + 1)/op['step_size'])
 
