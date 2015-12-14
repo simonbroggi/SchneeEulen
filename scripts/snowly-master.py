@@ -198,6 +198,7 @@ class SnowlyWebService:
 
     def __init__(self, net_server):
         self.net_server = net_server
+        self.server = self.net_server.server
 
     # def _cp_dispatch(self, vpath):
     #     logging.debug('cp_dispatch:%s' % vpath)
@@ -214,13 +215,22 @@ class SnowlyWebService:
     #     return self
 
     @cherrypy.tools.json_out()
-    @cherrypy.tools.accept(media='text/plain')
+    @cherrypy.tools.accept(media='application/json')
     def GET(self, *vpath):
         cmd = vpath[0]
         if cmd == 'clients':
-            return self.net_server.server.clientsById
+            return self.server.clientsById
+        elif cmd == 'info':
+            return {
+                'clients': self.server.clientsById,
+                'active_strategy': str(self.server.active_strategy.__class__.__name__)
+                #'master_strategies': self.server.strategies.keys()
+            }
         else:
-            return {'result': 'hello world'}
+            return {'available_commands': {
+                'clients': 'list of connected clients',
+                'info': 'information about strategies'
+            }}
 
     @cherrypy.tools.json_in()
     @cherrypy.tools.json_out()
@@ -230,7 +240,6 @@ class SnowlyWebService:
             clientId = vpath[1]
         else:
             return {'result': 'not implemented'}
-
 
     #def POST(self):
     #
