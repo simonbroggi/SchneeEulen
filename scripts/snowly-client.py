@@ -12,7 +12,7 @@ from actors import led
 from actors import servo
 from strategies.base import StrategyThread
 from strategies.client.simple import SimpleRandomizedStrategy
-from strategies.client.autonomous import BreathingAgitation
+from strategies.client.autonomous import AutoStrategy
 __exitSignal__ = False
 
 # logging configuration
@@ -306,7 +306,9 @@ if len(sys.argv) == 2:
         config_file = config_file[:-3]
 
 log.debug("Reading configuration from file %s.py" % config_file)
-conf = __import__(config_file, globals(), locals(), [])
+conf = __import__('conf.' + config_file, globals(), locals(), [config_file])
+#logging.debug(_conf)
+#conf = _conf[config_file]
 
 # update log configuration
 log.setLevel(conf.LOG_LEVEL)
@@ -316,7 +318,7 @@ log.debug("Creating client %s" % conf.CLIENT_ID)
 client = SnowlyClient(conf.CLIENT_MASTER_IP, conf.CLIENT_MASTER_PORT)
 
 # register client strategies (stoppable threads)
-client.register_strategy(BreathingAgitation, 0)
+client.register_strategy(AutoStrategy, 0)
 #client.register_strategy(SimpleRandomizedStrategy, 1)
 #client.register_strategy(StrategyThread, 999)
 
