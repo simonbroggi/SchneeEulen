@@ -10,9 +10,9 @@ import Queue
 class Dimmer(threading.Thread):
     MAX_QUEUE_SIZE = 50
 
-    def __init__(self, gpio_led, steps=1000, freq=100):
+    def __init__(self, gpio_led, steps=1000, freq=100, body_part='Dimmer-%s'):
         logging.debug('Initializing dimmer gpio=%s steps=%s freq=%s' % (gpio_led, steps, freq))
-        threading.Thread.__init__(self)
+        threading.Thread.__init__(self, name=body_part % gpio_led)
         self.signal = True
 
         self.pi = pigpio.pi()
@@ -48,10 +48,10 @@ class Dimmer(threading.Thread):
         if clear:
             self.clear()
 
-        if start_val == -1:
+        if math.isnan(start_val):
             start_val = self.current_val
 
-        if end_val == -1:
+        if math.isnan(end_val):
             end_val = self.current_val
 
         self.queue.put({'start_val': start_val,

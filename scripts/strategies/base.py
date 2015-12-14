@@ -13,8 +13,8 @@ class StrategyThread(threading.Thread):
     """
     Base class to execute strategies
     """
-    def __init__(self, main_thread):
-        threading.Thread.__init__(self)
+    def __init__(self, main_thread, threadName=None):
+        threading.Thread.__init__(self, name=threadName)
         self.daemon = True
         self.__signalExit__ = False
         self.main_thread = main_thread

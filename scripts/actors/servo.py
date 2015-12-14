@@ -19,7 +19,7 @@ class Servo(threading.Thread):
 
     def __init__(self, gpio, min_angle=0.0, max_angle=180.0, pw_min=800, pw_max=2500, freq=50):
         logging.debug('Initializing pwm servo controller gpio=%s min_angle=%s max_angle=%s limit_min=%s limit_max=%s' % (gpio, min_angle, max_angle, pw_min, pw_max))
-        threading.Thread.__init__(self)
+        threading.Thread.__init__(self, name="Servo-%s" % gpio)
         self.daemon = True
 
         # socket connection to pigpiod
@@ -54,12 +54,12 @@ class Servo(threading.Thread):
             self.clear()
 
 
-        # if start_angle == -1:
-        #     start_angle = self.current_val
-        #
-        # if end_angle == -1:
-        #     end_angle = self.current_val
-        #
+        if math.isnan(start_angle):
+            start_angle = self.current_val
+
+        if math.isnan(end_angle):
+            end_angle = self.current_val
+
         self.queue.put({'start_angle': start_angle,
                            'end_angle': end_angle,
                            'duration': duration,
@@ -70,14 +70,28 @@ class Servo(threading.Thread):
         self.pi.set_PWM_dutycycle(self.gpio, 0)
         self.pi.stop()
 
+    def pwm_to_angle(self, pwm):
+        pulse_range = self.pw_max - self.pw_min
+        angle_range = self.max_angle - self.min_angle
+        #logging.debug("%s %s %s %f" % (pulse_range, angle_range, self.pw_min, ((pwm - self.pw_min)/float(pulse_range))))
+        return ((pwm - self.pw_min) / float(pulse_range))*angle_range + self.min_angle
+
+    def angle_to_pwm(self, angle):
+        pulse_range = self.pw_max - self.pw_min
+        angle_range = self.max_angle - self.min_angle
+        return self.pw_min + int(round(((angle - self.min_angle)/angle_range) * pulse_range))
+
     def run_op(self, op):
         logging.debug('servo run op=%s' % op)
 
-        pulse_range = self.pw_max - self.pw_min
-        angle_range = self.max_angle - self.min_angle
+        #pulse_range = self.pw_max - self.pw_min
+        #angle_range = self.max_angle - self.min_angle
 
-        start_pw = self.pw_min + int(round(((op['start_angle'] - self.min_angle)/angle_range) * pulse_range))
-        end_pw = self.pw_min + int(round(((op['end_angle'] - self.min_angle)/angle_range) * pulse_range))
+        #start_pw = self.pw_min + int(round(((op['start_angle'] - self.min_angle)/angle_range) * pulse_range))
+        #end_pw = self.pw_min + int(round(((op['end_angle'] - self.min_angle)/angle_range) * pulse_range))
+
+        start_pw = self.angle_to_pwm(op['start_angle'])
+        end_pw = self.angle_to_pwm(op['end_angle'])
 
         step_count = abs((end_pw - start_pw + 1)/op['step_size'])
 
@@ -125,6 +139,11 @@ if __name__ == "__main__":
 
     logging.debug('servo test (start)')
     servo = Servo(4)
+    logging.debug('pwm/angle conversion tests')
+    logging.debug(servo.angle_to_pwm(90))
+    logging.debug(servo.pwm_to_angle(servo.angle_to_pwm(90)))
+    exit()
+
     servo.start()
     servo.add(0.0, 180.0, 1.0, 2)
     servo.add(180.0, 0.0, 1.0, -2)

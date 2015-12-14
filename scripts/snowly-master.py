@@ -128,7 +128,6 @@ class SnowlyServer(Server):
         logging.debug("Snowly Server ready %s" % time.time())
 
         while not self.exitSignal:
-            #logging.debug(self.get_client_ids())
             try:
                 self.Pump()
             except Exception as e:
@@ -143,6 +142,8 @@ class SnowlyServer(Server):
 
             # sleep some time
             time.sleep(0.01)
+
+        self.shutdown()
 
     def shutdown(self):
         logging.debug('terminate snowly server master')
@@ -190,52 +191,124 @@ class SnowlyNet(threading.Thread):
 class SnowlyWeb:
     @cherrypy.expose
     def index(self):
-        return open('index.html')
+        return open('static/index.html')
 
 class SnowlyWebService:
+    exposed = True
+
     def __init__(self, net_server):
         self.net_server = net_server
 
+    # def _cp_dispatch(self, vpath):
+    #     logging.debug('cp_dispatch:%s' % vpath)
+    #     if len(vpath) == 1:
+    #         cherrypy.request.params['name'] = vpath.pop()
+    #         return self
+    #     #
+    #     # if len(vpath) == 3:
+    #     #     cherrypy.request.params['artist'] = vpath.pop(0)  # /band name/
+    #     #     vpath.pop(0) # /albums/
+    #     #     cherrypy.request.params['title'] = vpath.pop(0) # /album title/
+    #     #     return self.albums
+    #
+    #     return self
+
+    @cherrypy.tools.json_out()
+    @cherrypy.tools.accept(media='text/plain')
+    def GET(self, *vpath):
+        cmd = vpath[0]
+        if cmd == 'clients':
+            return self.net_server.server.clientsById
+        else:
+            return {'result': 'hello world'}
+
     @cherrypy.tools.json_in()
     @cherrypy.tools.json_out()
-    def index(self):
-        data = cherrypy.request.json
+    def PUT(self, *vpath):
+        cmd = vpath[0]
+        if cmd == '':
+            clientId = vpath[1]
+        else:
+            return {'result': 'not implemented'}
+
+
+    #def POST(self):
+    #
+    #    return
+
+    # @cherrypy.expose
+    # #@cherrypy.tools.json_in()
+    # @cherrypy.tools.json_out()
+    # def index(self):
+    #     logging.debug('snowlywebservice json')
+    #     data = cherrypy.request.json
+    #     return '{"ok":"%s" % self.net_server }'
+
+#    index._cp_config = {
+#        'cherrypy.tools.json_in.on': True
+#    }
 
 if __name__ == '__main__':
     # owl communication network
     logging.debug('=== initializing owl communication network')
     snowlynet = SnowlyNet(False)
     snowlynet.start()
+    # try:
+    #     while True and snowlynet.is_alive():
+    #         sleep(1)
+    # except KeyboardInterrupt:
+    #     logging.debug('interrupted - signalling exit')
+    #     snowlynet.signal_exit()
+
+    # owl control web interface
+    logging.debug('=== initializing owl web control interface')
+
+    api_conf = {
+        '/': {
+            'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
+            'tools.sessions.on': True,
+            'tools.response_headers.on': True,
+            'tools.response_headers.headers': [('Content-Type', 'application/json')],
+        }
+    }
+    web_conf = {
+        '/': {
+             'tools.sessions.on': True,
+             'tools.staticdir.root': os.path.abspath(os.getcwd())
+         },
+         '/static': {
+             'tools.staticdir.on': True,
+             'tools.staticdir.dir': './static'
+         }
+    }
+
+    # disable logging
+    #cherrypy.config.update({'log.screen': False,
+    #                    'log.access_file': '',
+    #                    'log.error_file': ''})
+
+    #webapp = SnowlyWeb()
+    #webapp.snowlcontrol = SnowlyWebService(snowlynet)
+
+    cherrypy.server.socket_port = 8080
+    cherrypy.server.socket_host = '0.0.0.0'
+
+    if hasattr(cherrypy.engine, 'signal_handler'):
+        cherrypy.engine.signal_handler.subscribe()
+
+    cherrypy.tree.mount(SnowlyWeb(), '', web_conf)
+    cherrypy.tree.mount(SnowlyWebService(snowlynet), '/api', api_conf)
+
+    cherrypy.engine.start()
+    #cherrypy.engine.block()
+
     try:
         while True and snowlynet.is_alive():
             sleep(1)
     except KeyboardInterrupt:
         logging.debug('interrupted - signalling exit')
         snowlynet.signal_exit()
-
-    # owl control web interface
-    logging.debug('=== initializing owl web control interface')
-    web_conf = {
-        '/': {
-            'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
-            'tools.sessions.on': True,
-            'tools.response_headers.on': True,
-            'tools.response_headers.headers': [('Content-Type', 'text/plain')],
-            'tools.staticdir.root': os.path.abspath(os.getcwd())
-        },
-        '/static': {
-            'tools.staticdir.on': True,
-            'tools.staticdir.dir': './static'
-        }
-    }
-
-    webapp = SnowlyWeb()
-    webapp.snowlcontrol = SnowlyWebService(snowlynet)
-
-    cherrypy.server.socket_port = 8080
-    cherrypy.server.socket_host = '0.0.0.0'
-    #cherrypy.quickstart(webapp, '/', web_conf)
-
+        cherrypy.engine.exit()
 
 """
 sudo iptables -I INPUT 1 -i eth0 -p tcp --dport 8080 -j ACCEPT

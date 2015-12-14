@@ -27,14 +27,26 @@ class SimpleMasterStrategy(StrategyThread):
             # self.wait(2.0)
 
             self.main_thread.send_command(self.main_thread.get_client_ids(), {
-                "command": "dim",
-                "id": "eye_left",
-                "start_val": 0.0,
-                "end_val": 1.0,
-                "duration": 1.0,
-                "step": 1,
-                "clear": False
+                'command': 'dim',
+                'id': 'eye_left',
+                'start_val': 0.0,
+                'end_val': 1.0,
+                'duration': 1.0,
+                'step': 1,
+                'clear': False
             })
+
+            #servo.add(data['start_angle'], data['end_angle'], data['duration'], data['step'], data['clear'])
+            self.main_thread.send_command(self.main_thread.get_client_ids(), {
+                'command': 'move',
+                'id': 'head',
+                "start_angle": 0.0,
+                "end_angle": 180.0,
+                'duration': 4.0,
+                'step': 1,
+                'clear': False
+            })
+
             self.wait(5.0)
 
         logging.debug('SimpleRandomizedStrategy finished')

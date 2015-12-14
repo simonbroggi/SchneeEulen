@@ -12,7 +12,7 @@ class BreathingAgitation(StrategyThread):
     agitation: float between 0 and 1
     """
     def __init__(self, main_thread, agitation = 0.5):
-        StrategyThread.__init__(self, main_thread)
+        StrategyThread.__init__(self, main_thread, 'BreathingAgitation')
         self.agitation = agitation
         self.body_dimmer = self.main_thread.get_dimmer('body')
 
@@ -31,7 +31,7 @@ class BlinkingAgitation(StrategyThread):
     agitation: float between 0 and 1
     """
     def __init__(self, main_thread, agitation = 0.5):
-        StrategyThread.__init__(self, main_thread)
+        StrategyThread.__init__(self, main_thread, 'BlinkingAgitation')
         self.agitation = agitation
         self.eye_left = self.main_thread.get_dimmer('eye_left')
         self.eye_right = self.main_thread.get_dimmer('eye_right')
@@ -48,13 +48,13 @@ class BlinkingAgitation(StrategyThread):
             self.wait(waitTime)
         logging.debug('blinking finished')
 
-class LookingAgitation(StrategyThread, agitation = 0.5):
+class LookingAgitation(StrategyThread):
     """Looks to different spots faster and more frequently if more agitated.
     agitation: float between 0 and 1
     """
-    def __init__(slef, main_thread, agitation = 0.5):
-        StrategyThread.__init__(slef, main_thread)
-        slef.agitation =  agitation
+    def __init__(self, main_thread, agitation=0.5):
+        StrategyThread.__init__(self, main_thread, 'LookingAgitation')
+        self.agitation =  agitation
         self.servo = self.main_thread.get_servo('head')
 
     def run(self):
@@ -73,7 +73,7 @@ class AutoStrategy(StrategyThread):
     Let's a single owl be more or less agitated
     """
     def __init__(self, main_thread):
-        StrategyThread.__init__(self, main_thread)
+        StrategyThread.__init__(self, main_thread, 'AutoStrategy')
 
     def run(self):
         logging.debug('- using AutoStrategy.run')

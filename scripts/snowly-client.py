@@ -12,7 +12,7 @@ from actors import led
 from actors import servo
 from strategies.base import StrategyThread
 from strategies.client.simple import SimpleRandomizedStrategy
-
+from strategies.client.autonomous import BreathingAgitation
 __exitSignal__ = False
 
 # logging configuration
@@ -64,7 +64,7 @@ class SnowlyClient(ConnectionListener):
         for key in conf.LIGHT_DIMMERS.keys():
             dimmer_conf = conf.LIGHT_DIMMERS[key]
             logging.debug("- dimmer %s gpio=%s steps=%s freq=%s" % (key,dimmer_conf['gpio'],dimmer_conf['steps'],dimmer_conf['freq']))
-            self.dimmers[key] = led.Dimmer(dimmer_conf['gpio'], dimmer_conf['steps'], dimmer_conf['freq'])
+            self.dimmers[key] = led.Dimmer(dimmer_conf['gpio'], dimmer_conf['steps'], dimmer_conf['freq'], 'Dimmer-' + key + '-%s')
             self.dimmers[key].start()
 
             #for j in range(0,1):
@@ -173,6 +173,17 @@ class SnowlyClient(ConnectionListener):
     def process_command(self, data):
         logging.debug('processing command %s' % data['command'])
         if data['command'] == 'dim':
+            if not 'start_val' in data:
+                data['start_val'] = float('nan')
+            if not 'end_val' in data:
+                data['end_val'] = float('nan')
+            if not 'duration' in data:
+                data['duration'] = 4.0
+            if not 'step' in data:
+                data['step'] = 1
+            if not 'clear' in data:
+                data['clear'] = False
+
             try:
                 dimmer = self.dimmers[data['id']]
                 dimmer.add(data['start_val'], data['end_val'], data['duration'], data['step'], data['clear'])
@@ -180,11 +191,23 @@ class SnowlyClient(ConnectionListener):
                 logging.error("error with dim command: %s" % e)
 
         elif data['command'] == 'move':
+            # fill in defaults
+            if not 'start_angle' in data:
+                data['start_angle'] = float('nan')
+            if not 'end_angle' in data:
+                data['end_angle'] = float('nan')
+            if not 'duration' in data:
+                data['duration'] = 4.0
+            if not 'step' in data:
+                data['step'] = 1
+            if not 'clear' in data:
+                data['clear'] = False
+
             try:
                 servo = self.servos[data['id']]
                 servo.add(data['start_angle'], data['end_angle'], data['duration'], data['step'], data['clear'])
             except Exception as e:
-                logging.error("error with dim command: %s" % e)
+                logging.error("error with move command: %s" % e)
 
 
     def check_keyboard_commands(self):
@@ -293,9 +316,9 @@ log.debug("Creating client %s" % conf.CLIENT_ID)
 client = SnowlyClient(conf.CLIENT_MASTER_IP, conf.CLIENT_MASTER_PORT)
 
 # register client strategies (stoppable threads)
-client.register_strategy(StrategyThread, 999)
-client.register_strategy(SimpleRandomizedStrategy, 0)
-
+client.register_strategy(BreathingAgitation, 0)
+#client.register_strategy(SimpleRandomizedStrategy, 1)
+#client.register_strategy(StrategyThread, 999)
 
 # main thread
 try:
