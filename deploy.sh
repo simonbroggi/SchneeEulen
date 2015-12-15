@@ -1,7 +1,7 @@
-if [ $# -eq 2 ]
+if [ $# -eq 1 ]
   then
     echo Deploying scripts to host $1
-    rsync --progress -avz --exclude '.git' --exclude 'system' --exclude '.idea' --exclude '*.pyc' --exclude 'libs/cherrypy/build' --exclude 'CherryPy.egg*' --exclude '.CherryPy*' --exclude 'cherrypy/dist' --exclude 'libs' \
+    rsync --progress -avz --exclude '.git' --exclude '.DS_Store'--exclude 'system' --exclude '.idea' --exclude '*.pyc' --exclude 'libs/cherrypy/build' --exclude 'CherryPy.egg*' --exclude '.CherryPy*' --exclude 'cherrypy/dist' --exclude 'libs' \
         -e "ssh -A -t pi@$1" . :/home/pi/schnee-eulen/
 fi
 
@@ -18,7 +18,8 @@ fi
 #rsync --progress -alvz --exclude '.git' --exclude 'system' --exclude '.idea' --exclude '*.pyc' --exclude 'libs/cherrypy/build' --exclude 'CherryPy.egg*' --exclude '.CherryPy*' --exclude 'cherrypy/dist' --exclude 'libs' \
 #    -e "ssh owl-slave-02" . :/home/pi/schnee-eulen/
 
-# to make commands to slave work, best use this in .ssh/config:
+# to make commands to slave work with external (non-wlan) ip, best use this in .ssh/config:
+#
 #Host owl-master
 #        HostName 192.168.3.5
 #        User pi
