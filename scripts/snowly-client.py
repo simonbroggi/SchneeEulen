@@ -13,6 +13,7 @@ from actors import led
 from actors import servo
 from strategies.base import StrategyThread
 from strategies.client.simple import SimpleRandomizedStrategy
+from strategies.client.nightblinking import NightBlinking
 from strategies.client.autonomous import AutoStrategy
 __exitSignal__ = False
 
@@ -77,7 +78,9 @@ class SnowlyClient(ConnectionListener):
         logging.debug("initializing servos: %s", conf.SERVO_CONTROL)
         for key in conf.SERVO_CONTROL.keys():
             servo_conf = conf.SERVO_CONTROL[key]
-            self.servos[key] = servo.Servo(servo_conf['gpio'], 0.0, 180.0)
+            if not 'direction' in servo_conf:
+                servo_conf['direction'] = 'normal'
+            self.servos[key] = servo.Servo(servo_conf['gpio'], 0.0, 180.0, 800, 2500, 50, servo_conf['direction'])
             self.servos[key].start()
 
     def shutdownDimmers(self):
@@ -163,8 +166,8 @@ class SnowlyClient(ConnectionListener):
 
     def Network_command(self, data):
         logging.debug('master command: command %s' % data)
-        if self.active_strategy is not None:
-            self.switch_strategy(None)
+        #if self.active_strategy is not None:
+        #    self.switch_strategy(None)
 
         self.slave_mode = True
         self.slave_keepalive = time.time()
@@ -211,6 +214,20 @@ class SnowlyClient(ConnectionListener):
             except Exception as e:
                 logging.error("error with move command: %s" % e)
 
+        elif data['command'] == 'switch_strategy':
+            try:
+                strategy = data['strategy']
+                logging.debug('----> command switch_strategy strategy=%s active_strategy=%s' % (strategy, self.active_strategy))
+
+                if strategy is not None:
+                    logging.debug('calling switch_strategy with %s' % globals()[strategy])
+                    self.switch_strategy(globals()[strategy])
+                else:
+                    logging.debug('calling switch strategy with None')
+                    self.switch_strategy(None)
+
+            except Exception as e:
+                logging.error("error when switching strategy: %s" % e)
 
     def check_keyboard_commands(self):
         r, w, x = select.select([sys.stdin], [], [], 0.0001)
@@ -242,16 +259,22 @@ class SnowlyClient(ConnectionListener):
             raise BaseException("Strategy does not have base type StrategyThread", strategy)
 
         self.strategies[strategy] = {
+            'id': strategy.__name__,
             'weight': weight
         }
 
         #strategy.registered({'owner': self })
-        logging.debug("registered strategy %s" % strategy)
+        logging.debug("registered strategy %s with id %s" % (strategy, strategy.__name__))
 
     def remove_strategy(self, strategy):
         del self.strategies[strategy]
 
     def switch_strategy(self, new_strategy):
+        logging.debug("==============> switch strategy: active=%s new=%s" % (self.active_strategy, new_strategy))
+        if type(self.active_strategy) is new_strategy:
+            logging.debug('strategy %s already active' % new_strategy)
+            return
+
         logging.debug("switching strategy to %s" % new_strategy)
         if self.active_strategy:
             logging.debug('signalling exit to strategy %s' % self.active_strategy)
@@ -280,6 +303,9 @@ class SnowlyClient(ConnectionListener):
             if self.connect_retry_time - time.time() <= 0:
                 self.reconnect()
 
+        if (self.active_strategy is not None) and (not self.active_strategy.is_alive()):
+            self.active_strategy = None
+
         if self.slave_mode and (time.time() - self.slave_keepalive > consts.SLAVE_TIMEOUT):
             logging.debug('---> no command from master within %s seconds' % consts.SLAVE_TIMEOUT)
             logging.debug('terminating slave mode...')
@@ -295,7 +321,7 @@ class SnowlyClient(ConnectionListener):
         logging.debug('terminate snowly client')
         if self.active_strategy:
             self.active_strategy.signal_exit()
-            sleep(2.0)
+            sleep(1.0)
 
         self.shutdownDimmers()
         self.shutdownServos()
@@ -321,8 +347,8 @@ client = SnowlyClient(conf.CLIENT_MASTER_IP, conf.CLIENT_MASTER_PORT)
 
 # register client strategies (stoppable threads)
 #client.register_strategy(AutoStrategy, 0)
-client.register_strategy(SimpleRandomizedStrategy, 1)
-#client.register_strategy(StrategyThread, 999)
+#client.register_strategy(SimpleRandomizedStrategy, 1)
+client.register_strategy(NightBlinking, 999)
 
 def clean_terminate(signal, frame):
     __exitSignal__ = True
@@ -337,7 +363,7 @@ try:
         # log.debug("- main loop step %s" % time.time())
         client.check_keyboard_commands()
         client.Loop()
-        sleep(0.01)
+        sleep(0.1)
         
 except KeyboardInterrupt:
     log.debug("Keyboard interrupt")

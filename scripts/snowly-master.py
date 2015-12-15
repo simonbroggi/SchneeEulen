@@ -13,6 +13,7 @@ from PodSixNet.Channel import Channel
 from PodSixNet.Server import Server
 
 from strategies.base import StrategyThread
+from strategies.master.nightowls import NightOwls
 from strategies.master.simple import SimpleMasterStrategy
 
 # logging configuration
@@ -136,6 +137,9 @@ class SnowlyServer(Server):
                 # catch and log any exceptions that come up to this point
                 log.error(e)
 
+            if (self.active_strategy is not None) and (not self.active_strategy.is_alive()):
+                self.active_strategy = None
+
             if self.active_strategy is None:
                 strategies = sorted(self.strategies.items(), key=lambda x: x[1]['weight'])
                 if len(strategies) > 0:
@@ -143,7 +147,7 @@ class SnowlyServer(Server):
                     self.switch_strategy(strategies[0][0])
 
             # sleep some time
-            time.sleep(0.01)
+            time.sleep(0.1)
 
         self.shutdown()
 
@@ -181,7 +185,9 @@ class SnowlyNet(threading.Thread):
         server = SnowlyServer(localaddr=(conf.MASTER_IP, conf.MASTER_PORT), conf=conf)
 
         # register client strategies (stoppable threads)
+        server.register_strategy(NightOwls, 0)
         server.register_strategy(SimpleMasterStrategy, 999)
+
         self.server = server
 
     def run(self):
