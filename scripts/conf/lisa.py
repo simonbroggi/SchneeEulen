@@ -7,7 +7,7 @@ import logging
 #
 
 # available log levels: NOTSET, DEBUG, INFO, WARNING, ERROR, CRITICAL
-LOG_LEVEL = logging.DEBUG
+LOG_LEVEL = logging.INFO
 
 
 #
@@ -22,7 +22,7 @@ LIGHT_DIMMERS = {
     'eye_left': {
         'gpio': 17,
         'steps': 500,
-        'freq': 1000
+        'freq': 300
     },
      'body': {
         'gpio': 27,
@@ -32,7 +32,7 @@ LIGHT_DIMMERS = {
     'eye_right': {
         'gpio': 22,
         'steps': 500,
-        'freq': 1000
+        'freq': 400
     }
 }
 
@@ -47,7 +47,7 @@ SERVO_CONTROL = {
 #
 # networking
 #
-NETWORK_CONNECT_RETRY_DELAY = 2
+NETWORK_CONNECT_RETRY_DELAY = 3
 
 # information about where to send data
 CLIENT_MASTER_IP = '10.0.0.76'

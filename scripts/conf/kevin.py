@@ -7,7 +7,7 @@ import logging
 #
 
 # available log levels: NOTSET, DEBUG, INFO, WARNING, ERROR, CRITICAL
-LOG_LEVEL = logging.DEBUG
+LOG_LEVEL = logging.INFO
 
 
 #
@@ -22,7 +22,7 @@ LIGHT_DIMMERS = {
     'eye_left': {
         'gpio': 13,
         'steps': 500,
-        'freq': 1000
+        'freq': 200,
     },
      'body': {
         'gpio': 19,
@@ -32,10 +32,8 @@ LIGHT_DIMMERS = {
     'eye_right': {
         'gpio': 26,
         'steps': 500,
-        'freq': 1000
+        'freq': 200
     }
-   #'eye_right': 24,
-    #'body': 28
 }
 
 # servo configuration per client (should be 1 per owl)
@@ -49,7 +47,7 @@ SERVO_CONTROL = {
 #
 # networking
 #
-NETWORK_CONNECT_RETRY_DELAY = 10
+NETWORK_CONNECT_RETRY_DELAY = 3
 
 # information about where to send data
 CLIENT_MASTER_IP = '10.0.0.76'
