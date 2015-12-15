@@ -81,7 +81,7 @@ class BlinkingAgitation(StrategyThread):
     def __init__(self, main_thread, agitation=0.5):
         StrategyThread.__init__(self, main_thread, 'BlinkingAgitation')
         self.agitation = agitation
-        self.open = 0.11  # 0.3
+        self.open = 0.10  # 0.3
         self.closed = 0.005  # 0.05
         self.eye_left = self.main_thread.get_dimmer('eye_left')
         self.eye_right = self.main_thread.get_dimmer('eye_right')
@@ -149,6 +149,41 @@ class HeadTurnAngularVelocity(StrategyThread):
             waitTime = random.uniform(2.0, 10.0) * (1.5-self.agitation) * (1.5-self.agitation)
             self.wait(waitTime)
 
+class CleaningStrategy(StrategyThread):
+    """
+    owl cleans itselve
+    """
+    def __init__(self, main_thread):
+        StrategyThread.__init__(self, main_thread, 'CleaningStrategy')
+        self.servo = self.main_thread.get_servo('head')
+        self.body = self.main_thread.get_dimmer('body')
+        self.eye_left = self.main_thread.get_dimmer('eye_left')
+        self.eye_right = self.main_thread.get_dimmer('eye_right')
+        self.rest_angle = 70
+        self.delta_angle = 70
+        self.t = 0.004
+
+    def run(self):
+        while not self.__signalExit__:
+
+            self.body.add(float('nan'), 0.01, 2, 1, True)
+            self.servo.add(float('nan'), self.rest_angle, 2, 1, True)
+            self.wait(2)
+
+            self.body.add(float('nan'), 1, self.t * 8.5)
+            step = 10
+            self.servo.add(float('nan'), self.rest_angle + self.delta_angle, self.t, step)
+            self.servo.add(float('nan'), self.rest_angle - self.delta_angle, self.t, step)
+            self.servo.add(float('nan'), self.rest_angle + self.delta_angle, self.t, step)
+            self.servo.add(float('nan'), self.rest_angle - self.delta_angle, self.t, step)
+            self.servo.add(float('nan'), self.rest_angle + self.delta_angle, self.t, step)
+            self.servo.add(float('nan'), self.rest_angle - self.delta_angle, self.t, step)
+            self.servo.add(float('nan'), self.rest_angle + self.delta_angle, self.t, step)
+            self.servo.add(float('nan'), self.rest_angle - self.delta_angle, self.t, step)
+            self.servo.add(float('nan'), self.rest_angle, self.t*0.5)
+            self.wait(6)
+
+
 class AutoStrategy(StrategyThread):
     """
     Let's a single owl be more or less agitated
@@ -157,7 +192,13 @@ class AutoStrategy(StrategyThread):
         StrategyThread.__init__(self, main_thread, 'AutoStrategy')
 
     def run(self):
-        logging.debug('- using AutoStrategy.run')
+        logging.debug('- using AutoStrategy.run CLEAN!!!')
+        cleaning = CleaningStrategy(self.main_thread)
+        cleaning.start()
+
+        self.wait(200)
+        cleaning.signal_exit()
+
         looking = HeadTurnAngularVelocity(self.main_thread)
         looking.start()
 
