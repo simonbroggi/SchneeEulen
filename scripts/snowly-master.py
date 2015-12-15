@@ -6,7 +6,6 @@ import logging
 import consts
 from time import sleep
 import datetime
-import dateutil.parser
 import subprocess
 import cherrypy
 
@@ -205,7 +204,8 @@ class SnowlyWebService:
 
     def set_datetime(self, datestring):
         try:
-            dt = dateutil.parser.parse(datestring)
+            #dt = dateutil.parser.parse(datestring)
+            dt = datetime.now()
             logging.debug('set system datetime to string %s (datetime %s)' % (datestring, dt))
             subprocess.call("sudo date -s '{:}'".format(dt.strftime('%Y/%m/%d %H:%M:%S')), shell=True)
         except:

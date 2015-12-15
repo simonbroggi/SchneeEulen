@@ -189,6 +189,7 @@ class SnowlyClient(ConnectionListener):
                 dimmer = self.dimmers[data['id']]
                 dimmer.add(data['start_val'], data['end_val'], data['duration'], data['step'], data['clear'])
             except Exception as e:
+                logging.error(e)
                 logging.error("error with dim command: %s" % e)
 
         elif data['command'] == 'move':
@@ -319,8 +320,8 @@ log.debug("Creating client %s" % conf.CLIENT_ID)
 client = SnowlyClient(conf.CLIENT_MASTER_IP, conf.CLIENT_MASTER_PORT)
 
 # register client strategies (stoppable threads)
-client.register_strategy(AutoStrategy, 0)
-#client.register_strategy(SimpleRandomizedStrategy, 1)
+#client.register_strategy(AutoStrategy, 0)
+client.register_strategy(SimpleRandomizedStrategy, 1)
 #client.register_strategy(StrategyThread, 999)
 
 def clean_terminate(signal, frame):

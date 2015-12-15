@@ -84,37 +84,43 @@ class Servo(threading.Thread):
         #end_pw = self.pw_min + int(round(((op['end_angle'] - self.min_angle)/angle_range) * pulse_range))
 
         start_angle = op['start_angle']
-        if math.isnan(start_angle) and self.current_val is not None:
-            start_angle = self.current_val
-
         end_angle = op['end_angle']
+
+        if math.isnan(start_angle) and self.current_val is not None:
+            start_pw = self.current_val
+        else:
+            #start_angle = min(max(start_angle, self.min_angle), self.max_angle)
+            start_pw = self.angle_to_pwm(start_angle)
+
         if math.isnan(end_angle) and self.current_val is not None:
-            end_angle = self.current_val
+            end_pw = self.current_val
+        else:
+            #end_angle = min(max(end_angle, self.min_angle), self.max_angle)
+            end_pw = self.angle_to_pwm(end_angle)
 
-        start_angle = min(max(start_angle, self.min_angle), self.max_angle)
-        end_angle = min(max(end_angle, self.min_angle), self.max_angle)
-
-        start_pw = self.angle_to_pwm(start_angle)
-        end_pw = self.angle_to_pwm(end_angle)
-
-        step_count = abs((end_pw - start_pw + 1)/op['step_size'])
-
-        step_delay = op['duration'] / step_count
+        start_pw = min(max(end_pw, self.pw_min), self.pw_max)
+        end_pw = min(max(start_pw, self.pw_min), self.pw_max)
 
         step_size = op['step_size']
         if start_pw > end_pw:
             step_size = - abs(op['step_size'])
+        
+        step_count = abs((end_pw - start_pw + 1)/op['step_size'])
 
-        logging.debug("servo worker on gpio=%s start_pw=%s end_pw=%s step_size=%s duration=%s" % (self.gpio, start_pw, end_pw, step_size, op['duration']))
+        step_delay = op['duration'] / step_count
+
+        logging.debug("servo worker on gpio=%s start_pw=%s end_pw=%s step_size=%s step_delay=%s duration=%s" % (self.gpio, start_pw, end_pw, step_size, step_delay, op['duration']))
 
         pw = start_pw
         while self.signal and not self.stop_op and step_count > 0:
+            logging.debug('---> set servo pulsewidth %d' % pw)
             self.pi.set_servo_pulsewidth(self.gpio, pw)
             self.current_val = pw
             pw += step_size
             time.sleep(step_delay)
             step_count -= 1
 
+        self.current_val = end_pw
         self.pi.set_servo_pulsewidth(self.gpio, end_pw)
 
     def run(self):

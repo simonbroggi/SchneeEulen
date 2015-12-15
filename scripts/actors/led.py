@@ -48,12 +48,6 @@ class Dimmer(threading.Thread):
         if clear:
             self.clear()
 
-        if math.isnan(start_val):
-            start_val = self.current_val
-
-        if math.isnan(end_val):
-            end_val = self.current_val
-
         self.queue.put({'start_val': start_val,
                            'end_val': end_val,
                            'duration': duration,
@@ -67,27 +61,45 @@ class Dimmer(threading.Thread):
     def run_op(self, op):
         logging.debug('run op=%s' % op)
 
+        if math.isnan(op['start_val']):
+            start_step = self.current_val
+            logging.debug('start_val is_nan, using %f' % start_step)
+        else:
+            start_step = int(round(op['start_val'] * (self.steps - 1.0)))
+
+        if math.isnan(op['end_val']):
+            end_step = self.current_val
+            logging.debug('start_val is_nan, using %f' % end_step)
+        else:
+            end_step = int(round(op['end_val'] * (self.steps - 1.0)))
+
         step_size = op['step_size']
-        if op['start_val'] > op['end_val']:
+        if start_step > end_step:
             step_size = -abs(op['step_size'])
 
-        start_step = int(round(op['start_val'] * (self.steps - 1.0)))
-        end_step = int(round(op['end_val'] * (self.steps - 1.0)))
+        if step_size == 0:
+            logging.debug('warning: no dim steps needed')
+            return
+
         step_count = (abs(end_step - start_step) + 1) / abs(step_size)
+        if step_count == 0:
+            logging.debug('warning: no dim steps needed')
+            return
 
         step_delay = op['duration'] / step_count
-        logging.debug('start=%f end_step=%f step_delay=%f step_count=%f' % (start_step, end_step, step_delay, step_count))
+        logging.debug('self=%s start=%f end_step=%f step_delay=%f step_count=%f' % (self, start_step, end_step, step_delay, step_count))
 
         t = start_step
         while self.signal and not self.stop_op and step_count > 0:
-            #logging.debug('- set dutycycle for t=%f => %f' % (t, self.dutycycle(t)))
-            self.current_val = self.dutycycle(t)
-            self.pi.set_PWM_dutycycle(self.gpio, self.current_val)
+            #logging.debug('- set dutycycle for t=%f => %f, current_val=%f' % (t, self.dutycycle(t), self.current_val))
+            self.current_val = t
+            self.pi.set_PWM_dutycycle(self.gpio, self.dutycycle(self.current_val))
             time.sleep(step_delay)
             t += step_size
             step_count -= 1
 
         # case when step_size does not fit end
+        self.current_val = self.dutycycle(end_step)
         self.pi.set_PWM_dutycycle(self.gpio, self.dutycycle(end_step))
 
     def run(self):
@@ -117,11 +129,13 @@ if __name__ == "__main__":
     logging.debug('dimmer test (start)')
     dimmer = Dimmer(27, 500, 500)
     dimmer.start()
-    dimmer.add(0.0, 1.0, 0.0, 1)
-    dimmer.add(1.0, 0.0, 0.0, -1)
-    dimmer.add(0.0, 1.0, 0.0, 1)
+    dimmer.add(float('nan'), 1.0, 0.0, 1)
     dimmer.add(1.0, 0.0, 0.0, -1)
 
+    time.sleep(2)
+    #dimmer.add(0.0, 1.0, 0.0, 1)
+    dimmer.add(float('nan'), 0.0, 0.0, -1)
+    dimmer.add(float('nan'), 0.0, 1.0, 1)
     try:
         time.sleep(1000)
     except KeyboardInterrupt:

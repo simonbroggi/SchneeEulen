@@ -47,14 +47,14 @@ SERVO_CONTROL = {
 #
 # networking
 #
-NETWORK_CONNECT_RETRY_DELAY = 10
+NETWORK_CONNECT_RETRY_DELAY = 2
 
 # information about where to send data
-CLIENT_MASTER_IP = '10.0.0.1'
+CLIENT_MASTER_IP = '10.0.0.76'
 CLIENT_MASTER_PORT = 12345
 
 #
 # master configuration
 #
-MASTER_IP = '127.0.0.1'
+MASTER_IP = '0.0.0.0'
 MASTER_PORT = 12345

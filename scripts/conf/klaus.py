@@ -56,5 +56,5 @@ CLIENT_MASTER_PORT = 12345
 #
 # master configuration
 #
-MASTER_IP = '127.0.0.1'
+MASTER_IP = '0.0.0.0'
 MASTER_PORT = 12345
