@@ -15,10 +15,12 @@ class Servo(threading.Thread):
     pw_min = 600
     pw_max = 1800
     freq = 50
+    direction = 'normal'
     gpio = None
+    current_val = pw_min
 
-    def __init__(self, gpio, min_angle=0.0, max_angle=180.0, pw_min=800, pw_max=2500, freq=50):
-        logging.debug('Initializing pwm servo controller gpio=%s min_angle=%s max_angle=%s limit_min=%s limit_max=%s' % (gpio, min_angle, max_angle, pw_min, pw_max))
+    def __init__(self, gpio, min_angle=0.0, max_angle=180.0, pw_min=800, pw_max=2500, freq=50, direction='normal'):
+        logging.debug('Initializing pwm servo controller gpio=%s min_angle=%s max_angle=%s limit_min=%s limit_max=%s direction=%s' % (gpio, min_angle, max_angle, pw_min, pw_max, direction))
         threading.Thread.__init__(self, name="Servo-%s" % gpio)
         self.daemon = True
 
@@ -31,7 +33,8 @@ class Servo(threading.Thread):
         self.freq = freq
         self.gpio = gpio
         self.queue = Queue.Queue()
-        self.current_val = 0.0
+        self.current_val = pw_min
+        self.direction = direction
 
     def pwm_init(self):
         logging.debug("- gpio=%s set pwm freq=%s" % (self.gpio, self.freq))
@@ -77,43 +80,38 @@ class Servo(threading.Thread):
     def run_op(self, op):
         logging.debug('servo run op=%s' % op)
 
-        #pulse_range = self.pw_max - self.pw_min
-        #angle_range = self.max_angle - self.min_angle
-
-        #start_pw = self.pw_min + int(round(((op['start_angle'] - self.min_angle)/angle_range) * pulse_range))
-        #end_pw = self.pw_min + int(round(((op['end_angle'] - self.min_angle)/angle_range) * pulse_range))
-
         start_angle = op['start_angle']
         end_angle = op['end_angle']
 
-        if math.isnan(start_angle) and self.current_val is not None:
+        if self.direction == 'inverse':
+            start_angle = 180.0 - start_angle
+            end_angle = 180.0 - end_angle
+
+        start_pw = self.pw_min
+        end_pw = self.pw_max
+        if math.isnan(start_angle):
             start_pw = self.current_val
         else:
-            #start_angle = min(max(start_angle, self.min_angle), self.max_angle)
             start_pw = self.angle_to_pwm(start_angle)
 
-        if math.isnan(end_angle) and self.current_val is not None:
+        if math.isnan(end_angle):
             end_pw = self.current_val
         else:
-            #end_angle = min(max(end_angle, self.min_angle), self.max_angle)
             end_pw = self.angle_to_pwm(end_angle)
 
-        start_pw = min(max(end_pw, self.pw_min), self.pw_max)
-        end_pw = min(max(start_pw, self.pw_min), self.pw_max)
+        start_pw = min(max(start_pw, self.pw_min), self.pw_max)
+        end_pw = min(max(end_pw, self.pw_min), self.pw_max)
 
         step_size = op['step_size']
         if start_pw > end_pw:
             step_size = - abs(op['step_size'])
-        
+
         step_count = abs((end_pw - start_pw + 1)/op['step_size'])
-
         step_delay = op['duration'] / step_count
-
-        logging.debug("servo worker on gpio=%s start_pw=%s end_pw=%s step_size=%s step_delay=%s duration=%s" % (self.gpio, start_pw, end_pw, step_size, step_delay, op['duration']))
 
         pw = start_pw
         while self.signal and not self.stop_op and step_count > 0:
-            logging.debug('---> set servo pulsewidth %d' % pw)
+            #logging.debug('---> set servo pulsewidth %d' % pw)
             self.pi.set_servo_pulsewidth(self.gpio, pw)
             self.current_val = pw
             pw += step_size
