@@ -78,7 +78,7 @@ class Servo(threading.Thread):
         return self.pw_min + int(round(((angle - self.min_angle)/angle_range) * pulse_range))
 
     def run_op(self, op):
-        logging.debug('servo run op=%s' % op)
+        #logging.debug('servo run op=%s' % op)
 
         start_angle = op['start_angle']
         end_angle = op['end_angle']
@@ -126,9 +126,9 @@ class Servo(threading.Thread):
         logging.debug('Servo loop gpio=%s' % self.gpio)
         while self.signal:
             while self.signal and self.queue.qsize() > 0 and not self.stop_op:
-                logging.debug('Fetch op from queue=%s' % self.queue)
+                #logging.debug('Fetch op from queue=%s' % self.queue)
                 op = self.queue.get()
-                logging.debug('- op=%s' % op)
+                #logging.debug('- op=%s' % op)
                 self.run_op(op)
 
             while self.stop_op and self.signal:

@@ -38,6 +38,14 @@ class SimpleMasterStrategy(StrategyThread):
         logging.debug('- using SimpleMasterStrategy.run adv')
         body_parts = ['eye_left', 'eye_right', 'body']
 
+        self.main_thread.send_command(self.main_thread.get_client_ids(), {
+            'command': 'switch_strategy',
+            'strategy': 'NightBlinking'
+        })
+
+        self.wait(100.0)
+        return
+
         run_startup = True
         while not self.__signalExit__:
             logging.debug('- waiting for clients to sync')
@@ -64,7 +72,7 @@ class SimpleMasterStrategy(StrategyThread):
                             'command': 'dim',
                             'id': part,
                             'end_val': 1.0,
-                            'duration': 0.1,
+                            'duration': 0.5,
                             'step': 4,
                             'clear': True
                         })
@@ -72,11 +80,11 @@ class SimpleMasterStrategy(StrategyThread):
                             'command': 'dim',
                             'id': part,
                             'end_val': 0.0,
-                            'duration': 0.1,
+                            'duration': 0.5,
                             'step': 4
                         })
 
-                    self.wait(0.25)
+                    self.wait(0.4)
 
                 for owl in owls:
                     self.main_thread.send_command([owl], {
@@ -106,6 +114,6 @@ class SimpleMasterStrategy(StrategyThread):
             #     'step': 1,
             #     'clear': False
             # })
-            self.wait(10.0)
+            self.wait(8.0)
 
         logging.debug('SimpleMasterStrategy finished')

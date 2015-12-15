@@ -59,17 +59,17 @@ class Dimmer(threading.Thread):
         self.pi.stop()
 
     def run_op(self, op):
-        logging.debug('run op=%s' % op)
+        #logging.debug('run op=%s' % op)
 
         if math.isnan(op['start_val']):
             start_step = self.current_val
-            logging.debug('start_val is_nan, using %f' % start_step)
+            #logging.debug('start_val is_nan, using %f' % start_step)
         else:
             start_step = int(round(op['start_val'] * (self.steps - 1.0)))
 
         if math.isnan(op['end_val']):
             end_step = self.current_val
-            logging.debug('start_val is_nan, using %f' % end_step)
+            #logging.debug('start_val is_nan, using %f' % end_step)
         else:
             end_step = int(round(op['end_val'] * (self.steps - 1.0)))
 
@@ -87,7 +87,7 @@ class Dimmer(threading.Thread):
             return
 
         step_delay = op['duration'] / step_count
-        logging.debug('self=%s start=%f end_step=%f step_delay=%f step_count=%f' % (self, start_step, end_step, step_delay, step_count))
+        #logging.debug('self=%s start=%f end_step=%f step_delay=%f step_count=%f' % (self, start_step, end_step, step_delay, step_count))
 
         t = start_step
         while self.signal and not self.stop_op and step_count > 0:
