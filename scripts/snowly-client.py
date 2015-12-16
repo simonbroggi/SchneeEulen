@@ -14,6 +14,8 @@ from actors import servo
 from strategies.base import StrategyThread
 from strategies.client.simple import SimpleRandomizedStrategy
 from strategies.client.autonomous import AutoStrategy
+from strategies.client.autonomous import SimpleAuto
+
 __exitSignal__ = False
 
 # logging configuration
@@ -129,10 +131,10 @@ class SnowlyClient(ConnectionListener):
         None
 
     def connect(self):
-        log.debug("Connecting to "+''.join((self.host, ':'+str(self.port))))      
+        log.debug("Connecting to "+''.join((self.host, ':'+str(self.port))))
         self.is_connecting = 1
         self.Connect((self.host, self.port))
-        
+
     def reconnect(self):
         # if we get disconnected, only try once per second to re-connect
         log.debug("no connection or connection lost - trying reconnection in %ds..." % conf.NETWORK_CONNECT_RETRY_DELAY)
@@ -320,7 +322,7 @@ log.debug("Creating client %s" % conf.CLIENT_ID)
 client = SnowlyClient(conf.CLIENT_MASTER_IP, conf.CLIENT_MASTER_PORT)
 
 # register client strategies (stoppable threads)
-#client.register_strategy(AutoStrategy, 0)
+client.register_strategy(SimpleAuto, 0)
 client.register_strategy(SimpleRandomizedStrategy, 1)
 #client.register_strategy(StrategyThread, 999)
 
@@ -338,11 +340,10 @@ try:
         client.check_keyboard_commands()
         client.Loop()
         sleep(0.01)
-        
+
 except KeyboardInterrupt:
     log.debug("Keyboard interrupt")
     __exitSignal__ = True
     client.shutdown()
 
 log.debug("Exit client %s" % conf.CLIENT_ID)
-
