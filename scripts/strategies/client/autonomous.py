@@ -403,7 +403,7 @@ class SimpleAuto(StrategyThread):
                 self.cleaning()
 
     def sayNo(self):
-        rest_angle = 70
+        rest_angle = 75
         delta_angle = 35
         t = 0.53
 
@@ -466,11 +466,7 @@ class SimpleAuto(StrategyThread):
             r = random.randint(0, n)
         return r
 
-    def run(self):
-        while not self.__signalExit__:
-            self.lookyEyes(random.randint(2, 5))
-            self.wait(3)
-
+    def test(self):
         while not self.__signalExit__:
             self.heartbeatBody(0.2, 0.75, 20)
             self.sayNo()
@@ -497,12 +493,13 @@ class SimpleAuto(StrategyThread):
         self.sayNo()
         self.lookAroundAndBreath(15, 1)
 
+    def run(self):
         r = -1
         while not self.__signalExit__:
             r = self.newR(r, 5)
             logging.debug("******** SimpleAuto doing %i" % r)
             if r == 0:
-                self.lookyEyes(random.randint(2, 5))
+                self.heartbeatBody(0.2, 0.75, 20)
             elif r == 1:
                 self.lookAndHeartbeat()
             elif r == 2:
