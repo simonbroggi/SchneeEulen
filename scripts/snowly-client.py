@@ -346,8 +346,7 @@ log.debug("Creating client %s" % conf.CLIENT_ID)
 client = SnowlyClient(conf.CLIENT_MASTER_IP, conf.CLIENT_MASTER_PORT)
 
 # register client strategies (stoppable threads)
-#client.register_strategy(AutoStrategy, 0)
-#client.register_strategy(SimpleRandomizedStrategy, 1)
+client.register_strategy(AutoStrategy, 0)
 client.register_strategy(NightBlinking, 999)
 
 def clean_terminate(signal, frame):

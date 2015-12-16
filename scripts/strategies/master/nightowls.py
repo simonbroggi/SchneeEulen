@@ -1,7 +1,6 @@
 
 import logging
 import threading
-import pigpio
 import random
 import time
 import math
@@ -17,7 +16,7 @@ class NightOwls(StrategyThread):
         :param main_thread: SnowlyServer
         :return:
         """
-        StrategyThread.__init__(self, main_thread)
+        StrategyThread.__init__(self, main_thread, 'NightOwls')
 
     def startup(self):
         # fade down all owls to night mode

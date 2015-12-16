@@ -61,5 +61,7 @@ MASTER_PORT = 12345
 
 MASTER_PLAYLIST = [
     'SimpleMasterStrategy',
-    'NightOwls'
+    'NightOwls',
+    'LightUp',
+    'Dancer'
 ]

@@ -15,11 +15,13 @@ from PodSixNet.Server import Server
 from strategies.base import StrategyThread
 from strategies.master.nightowls import NightOwls
 from strategies.master.simple import SimpleMasterStrategy
+from strategies.master.lightup import LightUp
+from strategies.master.dancer import Dancer
+from strategies.master.autoclient import AutoClient
 
 # logging configuration
 log = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG, format='[%(levelname)s] (%(threadName)-10s) %(message)s')
-
 
 """
 LENZERHEIDE ZAUBERWALD 2015 * SCHNEE-EULEN * Snowy owls (master)
@@ -96,7 +98,8 @@ class SnowlyServer(Server):
         logging.debug('send_command clients=%s params=%s' % (clients, params))
         params['action'] = 'command'
         for id in clients:
-            self.clientsById[id].Send(params)
+            if id in self.clientsById:
+                self.clientsById[id].Send(params)
 
     def register_strategy(self, strategy, weight):
         if not issubclass(strategy, StrategyThread):
@@ -131,9 +134,9 @@ class SnowlyServer(Server):
     def launch(self, stdscr=None, *args, **kwds):
         logging.debug("Snowly Server ready %s" % time.time())
 
-        playlist = self.conf.MASTER_PLAYLIST
-        if playlist is None:
-            playlist = []
+        self.playlist = self.conf.MASTER_PLAYLIST
+        if self.playlist is None:
+            self.playlist = []
 
         playlist_index = 0
         while not self.exitSignal:
@@ -148,10 +151,10 @@ class SnowlyServer(Server):
                 self.active_strategy = None
 
             if self.active_strategy is None:
-                if playlist_index < len(playlist):
+                if playlist_index < len(self.playlist):
                     #logging.debug('playlist')
-                    active_item = playlist[playlist_index]
-                    playlist_index = (playlist_index + 1) % len(playlist)
+                    active_item = self.playlist[playlist_index]
+                    playlist_index = (playlist_index + 1) % len(self.playlist)
                     strategy_class = globals()[active_item]
                     self.switch_strategy(strategy_class)
                 else:
@@ -201,6 +204,8 @@ class SnowlyNet(threading.Thread):
 
         # register client strategies (stoppable threads)
         server.register_strategy(NightOwls, 0)
+        server.register_strategy(LightUp, 1)
+        server.register_strategy(Dancer, 2)
         server.register_strategy(SimpleMasterStrategy, 999)
 
         self.server = server
@@ -249,21 +254,24 @@ class SnowlyWebService:
     @cherrypy.tools.json_out()
     @cherrypy.tools.accept(media='application/json')
     def GET(self, *vpath):
-        cmd = vpath[0]
-        if cmd == 'clients':
-            return self.server.clientsById
-        elif cmd == 'info':
-            return {
-                'clients': self.server.clientsById,
-                'active_strategy': str(self.server.active_strategy.__class__.__name__),
-                #'master_strategies': self.server.strategies.keys()
-                'playlist': self.server.playlist
-            }
-        else:
-            return {'available_commands': {
-                'clients': 'list of connected clients',
-                'info': 'information about strategies'
-            }}
+        try:
+            cmd = vpath[0]
+            if cmd == 'clients':
+                return self.server.clientsById.keys()
+            elif cmd == 'info':
+                return {
+                    'clients': self.server.clientsById.keys(),
+                    'active_strategy': str(self.server.active_strategy.__class__.__name__),
+                    #'master_strategies': self.server.strategies.keys()
+                    'playlist': self.server.playlist
+                }
+            else:
+                return {'available_commands': {
+                    'clients': 'list of connected clients',
+                    'info': 'information about strategies'
+                }}
+        except Exception as e:
+            logging.error(e)
 
     @cherrypy.tools.json_in()
     @cherrypy.tools.json_out()
@@ -277,12 +285,15 @@ class SnowlyWebService:
     @cherrypy.tools.json_in()
     @cherrypy.tools.json_out()
     def POST(self, *vpath):
-        cmd = vpath[0]
-        if cmd == 'play':
-            logging.info('switching master strategy to %s' % vpath[1])
-            strategy_class = globals()[vpath[1]]
-            self.server.switch_strategy(strategy_class)
-            return {'result': 'ok'}
+        try:
+            cmd = vpath[0]
+            if cmd == 'play':
+                logging.info('switching master strategy to %s' % vpath[1])
+                strategy_class = globals()[vpath[1]]
+                self.server.switch_strategy(strategy_class)
+                return {'result': 'ok'}
+        except Exception as e:
+            logging.error(e)
 
     #def POST(self):
     #
@@ -335,9 +346,10 @@ if __name__ == '__main__':
     }
 
     # disable logging
-    #cherrypy.config.update({'log.screen': False,
-    #                    'log.access_file': '',
-    #                    'log.error_file': ''})
+    cherrypy.config.update({'log.screen': False,
+                       'log.access_file': '',
+                       'log.error_file': ''})
+    cherrypy.log.access_file = None
 
     #webapp = SnowlyWeb()
     #webapp.snowlcontrol = SnowlyWebService(snowlynet)
