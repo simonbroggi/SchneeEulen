@@ -45,7 +45,7 @@ class LightUp(StrategyThread):
 
         logging.debug('- switch to direct control ---------------------->')
         run_startup = True
-        duration = 30.0
+        duration = 600.0
         start_time = time.time()
         while not self.__signalExit__ and time.time() - start_time < duration:
             logging.debug('- waiting for clients to sync')

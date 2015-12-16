@@ -60,6 +60,7 @@ MASTER_IP = '0.0.0.0'
 MASTER_PORT = 12345
 
 MASTER_PLAYLIST = [
+    'AutoClient',
     'SimpleMasterStrategy',
     'NightOwls',
     'LightUp',

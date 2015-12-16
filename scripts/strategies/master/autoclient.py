@@ -40,7 +40,7 @@ class AutoClient(StrategyThread):
         logging.debug('AutoClient.run')
 
         start_time = time.time()
-        duration = 60.0
+        duration = random.uniform(30.0, 300.0)
         playlist = self.main_thread.conf.MASTER_PLAYLIST
         if len(playlist) == 0:
             return
