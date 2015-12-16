@@ -15,8 +15,8 @@ class BreathingAgitation(StrategyThread):
         StrategyThread.__init__(self, main_thread, 'BreathingAgitation')
         self.agitation = agitation
         self.body_dimmer = self.main_thread.get_dimmer('body')
-        self.dark = 0.15
-        self.light = 0.6
+        self.dark = 0.03
+        self.light = 0.3
 
     def run(self):
         while not self.__signalExit__:
@@ -36,24 +36,13 @@ class HeartbeatBody(StrategyThread):
         StrategyThread.__init__(self, main_thread, 'HeartbeatBody')
         self.agitation = agitation
         self.body_dimmer = self.main_thread.get_dimmer('body')
-        self.low = 0.35
-        self.mid = 0.65
-        self.midLow = 0.45
-        self.high = 1.0
-        self.eye_delta = - 0.3
+        self.low = 0.05
+        self.mid = 0.35
+        self.midLow = 0.15
+        self.high = 0.7
 
     def add(self, start_val, end_val, duration, step_size=2, clear=False):
         self.body_dimmer.add(start_val, end_val, duration, step_size, clear)
-        eye_start = start_val + self.eye_delta
-        if eye_start <= 0.0:
-            eye_start = 0.0
-        if eye_start >= 1.0:
-            eye_start = 1.0
-        eye_end = end_val + self.eye_delta
-        if eye_end <= 0.0:
-            eye_end = 0.0
-        if eye_end >= 1.0:
-            eye_end = 1.0
 
     def run(self):
         while not self.__signalExit__:
@@ -113,10 +102,10 @@ class HeartbeatAgitation(StrategyThread):
         self.body_dimmer = self.main_thread.get_dimmer('body')
         self.eye_left = self.main_thread.get_dimmer('eye_left')
         self.eye_right = self.main_thread.get_dimmer('eye_right')
-        self.low = 0.35
-        self.mid = 0.65
-        self.midLow = 0.45
-        self.high = 1.0
+        self.low = 0.05
+        self.mid = 0.35
+        self.midLow = 0.15
+        self.high = 0.7
         self.eye_delta = - 0.3
 
     def add(self, start_val, end_val, duration, step_size=2, clear=False):
@@ -156,7 +145,7 @@ class BlinkingAgitation(StrategyThread):
     def __init__(self, main_thread, agitation=0.5):
         StrategyThread.__init__(self, main_thread, 'BlinkingAgitation')
         self.agitation = agitation
-        self.open = 0.10  # 0.3
+        self.open = 0.08  # 0.3
         self.closed = 0.005  # 0.05
         self.eye_left = self.main_thread.get_dimmer('eye_left')
         self.eye_right = self.main_thread.get_dimmer('eye_right')
@@ -237,8 +226,8 @@ class CleaningStrategy(StrategyThread):
         self.rest_angle = 70
         self.delta_angle = 35
         self.t = 0.055  # 0.004 # 0.53 for a No
-        self.bright = 0.07
-        self.dark = 0.02
+        self.bright = 0.08
+        self.dark = 0.03
 
     def run(self):
         self.body.add(float('nan'), self.dark, 1, 1, True)
@@ -364,6 +353,12 @@ class SimpleAuto(StrategyThread):
         self.body.add(float('nan'), 0.0, t, 1, True)
         self.eye_left.add(float('nan'), 0.00, t, 1, True)
         self.eye_right.add(float('nan'), 0.00, t, 1, True)
+        self.wait(t)
+
+    def fadeLow(self, t=1.5):
+        self.body.add(float('nan'), 0.03, t, 1, True)
+        self.eye_left.add(float('nan'), 0.0022, t, 1, True)
+        self.eye_right.add(float('nan'), 0.0022, t, 1, True)
         self.wait(t)
 
     def lookyEyes(self, n=3):
@@ -496,20 +491,25 @@ class SimpleAuto(StrategyThread):
     def run(self):
         r = -1
         while not self.__signalExit__:
-            r = self.newR(r, 5)
+            r = self.newR(r, 7)
             logging.debug("******** SimpleAuto doing %i" % r)
             if r == 0:
                 self.heartbeatBody(0.2, 0.75, 20)
             elif r == 1:
                 self.lookAndHeartbeat()
             elif r == 2:
-                self.lookAroundAndBreath(random.uniform(20, 50), random.uniform(0.2, 0.8))
+                self.lookAroundAndBreath(random.uniform(60, 180), random.uniform(0.1, 0.6))
             elif r == 3:
                 self.cleanUntilDone()
             elif r == 4:
                 self.lookAroundAndBreath(random.uniform(10, 30), random.uniform(0, 1))
             elif r == 5:
                 self.sayNo()
+            elif r == 6:
+                self.fadeLow(random.uniform(2, 4))
+                self.wait(random.uniform(2, 4))
+            elif r == 7:
+                self.lookAroundAndBreath(random.uniform(10, 25), random.uniform(0.6, 0.95))
 
 class AutoStrategy(StrategyThread):
     """
