@@ -50,7 +50,7 @@ SERVO_CONTROL = {
 NETWORK_CONNECT_RETRY_DELAY = 3
 
 # information about where to send data
-CLIENT_MASTER_IP = '10.0.0.76'
+CLIENT_MASTER_IP = '10.0.0.1'
 CLIENT_MASTER_PORT = 12345
 
 #
