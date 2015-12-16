@@ -22,7 +22,7 @@ LIGHT_DIMMERS = {
     'eye_left': {
         'gpio': 16,
         'steps': 500,
-        'freq': 1000
+        'freq': 1500
     },
      'body': {
         'gpio': 20,
@@ -32,7 +32,7 @@ LIGHT_DIMMERS = {
     'eye_right': {
         'gpio': 21,
         'steps': 500,
-        'freq': 1000
+        'freq': 1500
     }
 }
 
