@@ -15,22 +15,22 @@ LOG_LEVEL = logging.INFO
 #
 
 # id for this specific client - must be unique in the network
-CLIENT_ID = 'MAJA'
+CLIENT_ID = 'KEVIN'
 
 # dimmer configuration per client (should be 3 per owl-client, max 9 per raspberry)
 LIGHT_DIMMERS = {
     'eye_left': {
-        'gpio': 16,
+        'gpio': 13,
         'steps': 500,
-        'freq': 200
+        'freq': 200,
     },
      'body': {
-        'gpio': 20,
+        'gpio': 19,
         'steps': 500,
         'freq': 500
     },
     'eye_right': {
-        'gpio': 21,
+        'gpio': 26,
         'steps': 500,
         'freq': 200
     }
@@ -39,8 +39,7 @@ LIGHT_DIMMERS = {
 # servo configuration per client (should be 1 per owl)
 SERVO_CONTROL = {
     'head': {
-        'gpio': 12,
-        'direction': 'inverse'
+        'gpio': 6
     }
 }
 
@@ -59,3 +58,8 @@ CLIENT_MASTER_PORT = 12345
 #
 MASTER_IP = '0.0.0.0'
 MASTER_PORT = 12345
+
+MASTER_PLAYLIST = [
+    'SimpleMasterStrategy',
+    'NightOwls'
+]

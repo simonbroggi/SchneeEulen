@@ -52,6 +52,7 @@ class SnowlyServer(Server):
     current_time = 0
     delta_time = 0
     strategies = {}
+    playlist = []
 
     active_strategy = None
 
@@ -130,6 +131,11 @@ class SnowlyServer(Server):
     def launch(self, stdscr=None, *args, **kwds):
         logging.debug("Snowly Server ready %s" % time.time())
 
+        playlist = self.conf.MASTER_PLAYLIST
+        if playlist is None:
+            playlist = []
+
+        playlist_index = 0
         while not self.exitSignal:
             try:
                 self.Pump()
@@ -138,16 +144,25 @@ class SnowlyServer(Server):
                 log.error(e)
 
             if (self.active_strategy is not None) and (not self.active_strategy.is_alive()):
+                logging.debug('strategy terminated - set active_strategy to None')
                 self.active_strategy = None
 
             if self.active_strategy is None:
-                strategies = sorted(self.strategies.items(), key=lambda x: x[1]['weight'])
-                if len(strategies) > 0:
-                    logging.debug("no strategy set, choosing strategy according to weight: %s" % strategies[0][0])
-                    self.switch_strategy(strategies[0][0])
+                if playlist_index < len(playlist):
+                    #logging.debug('playlist')
+                    active_item = playlist[playlist_index]
+                    playlist_index = (playlist_index + 1) % len(playlist)
+                    strategy_class = globals()[active_item]
+                    self.switch_strategy(strategy_class)
+                else:
+                    # no playlist
+                    strategies = sorted(self.strategies.items(), key=lambda x: x[1]['weight'])
+                    if len(strategies) > 0:
+                        logging.debug("no strategy set, choosing strategy according to weight: %s" % strategies[0][0])
+                        self.switch_strategy(strategies[0][0])
 
             # sleep some time
-            time.sleep(0.1)
+            time.sleep(0.01)
 
         self.shutdown()
 
@@ -240,8 +255,9 @@ class SnowlyWebService:
         elif cmd == 'info':
             return {
                 'clients': self.server.clientsById,
-                'active_strategy': str(self.server.active_strategy.__class__.__name__)
+                'active_strategy': str(self.server.active_strategy.__class__.__name__),
                 #'master_strategies': self.server.strategies.keys()
+                'playlist': self.server.playlist
             }
         else:
             return {'available_commands': {
@@ -257,6 +273,16 @@ class SnowlyWebService:
             clientId = vpath[1]
         else:
             return {'result': 'not implemented'}
+
+    @cherrypy.tools.json_in()
+    @cherrypy.tools.json_out()
+    def POST(self, *vpath):
+        cmd = vpath[0]
+        if cmd == 'play':
+            logging.info('switching master strategy to %s' % vpath[1])
+            strategy_class = globals()[vpath[1]]
+            self.server.switch_strategy(strategy_class)
+            return {'result': 'ok'}
 
     #def POST(self):
     #

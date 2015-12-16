@@ -9,6 +9,7 @@ import Queue
 
 class Dimmer(threading.Thread):
     MAX_QUEUE_SIZE = 50
+    exitEvent = None
 
     def __init__(self, gpio_led, steps=1000, freq=100, body_part='Dimmer-%s'):
         logging.debug('Initializing dimmer gpio=%s steps=%s freq=%s' % (gpio_led, steps, freq))
@@ -23,6 +24,7 @@ class Dimmer(threading.Thread):
         self.current_val = 0.0
         self.stop_op = False
         self.daemon = True
+        self.exitEvent = threading.Event()
 
     def pwm_init(self):
         self.pi.set_PWM_range(self.gpio, self.steps)
@@ -94,7 +96,9 @@ class Dimmer(threading.Thread):
             #logging.debug('- set dutycycle for t=%f => %f, current_val=%f' % (t, self.dutycycle(t), self.current_val))
             self.current_val = t
             self.pi.set_PWM_dutycycle(self.gpio, self.dutycycle(self.current_val))
-            time.sleep(step_delay)
+            #time.sleep(step_delay)
+            if self.signal:
+                self.exitEvent.wait(step_delay)
             t += step_size
             step_count -= 1
 
@@ -113,14 +117,12 @@ class Dimmer(threading.Thread):
                 logging.debug('- op=%s' % op)
                 self.run_op(op)
 
-            #while self.stop_op and self.signal:
-            #    time.sleep(0.001)
-
         logging.debug("terminating led dimmer on gpio=%s gracefully" % self.gpio)
         self.destroy()
 
     def signal_exit(self):
         self.signal = False
+        self.exitEvent.set()
 
 if __name__ == "__main__":
     log = logging.getLogger(__name__)
