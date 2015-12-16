@@ -16,6 +16,10 @@ from strategies.client.simple import SimpleRandomizedStrategy
 from strategies.client.nightblinking import NightBlinking
 from strategies.client.autonomous import AutoStrategy
 from strategies.client.autonomous import SimpleAuto
+from strategies.client.autonomous import BreathAndLook
+from strategies.client.autonomous import HeartbeatAndLook
+
+
 
 __exitSignal__ = False
 
@@ -350,6 +354,8 @@ client = SnowlyClient(conf.CLIENT_MASTER_IP, conf.CLIENT_MASTER_PORT)
 # register client strategies (stoppable threads)
 
 client.register_strategy(SimpleAuto, 0)
+client.register_strategy(BreathAndLook, 1)
+client.register_strategy(HeartbeatAndLook, 2)
 
 #client.register_strategy(SimpleRandomizedStrategy, 1)
 #client.register_strategy(StrategyThread, 999)

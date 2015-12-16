@@ -28,6 +28,81 @@ class BreathingAgitation(StrategyThread):
             self.wait(breathTime)
         logging.debug('breathing finished')
 
+class HeartbeatBody(StrategyThread):
+    """body light pulsate like a heartbeat.
+    Faster heartbeat when agitation is higher.
+    """
+    def __init__(self, main_thread, agitation=0.5):
+        StrategyThread.__init__(self, main_thread, 'HeartbeatBody')
+        self.agitation = agitation
+        self.body_dimmer = self.main_thread.get_dimmer('body')
+        self.low = 0.35
+        self.mid = 0.65
+        self.midLow = 0.45
+        self.high = 1.0
+        self.eye_delta = - 0.3
+
+    def add(self, start_val, end_val, duration, step_size=2, clear=False):
+        self.body_dimmer.add(start_val, end_val, duration, step_size, clear)
+        eye_start = start_val + self.eye_delta
+        if eye_start <= 0.0:
+            eye_start = 0.0
+        if eye_start >= 1.0:
+            eye_start = 1.0
+        eye_end = end_val + self.eye_delta
+        if eye_end <= 0.0:
+            eye_end = 0.0
+        if eye_end >= 1.0:
+            eye_end = 1.0
+
+    def run(self):
+        while not self.__signalExit__:
+            beatTime = 1.0 * (1.5-self.agitation)
+            first = beatTime * 0.2
+            second = beatTime * 0.1
+            third = beatTime * 0.22
+            recover = beatTime - first - second - third
+            self.add(float('nan'), self.mid, first, 2, True)
+            self.add(float('nan'), self.midLow, second)
+            self.add(float('nan'), self.high, third)
+            self.add(float('nan'), self.low, recover)
+            self.wait(beatTime + 0.3)
+        logging.debug('heartbeat body finished')
+
+class BreathAndLook(StrategyThread):
+    def __init__(self, main_thread, agitation=0.5):
+        StrategyThread.__init__(self, main_thread, 'BreathAndLook')
+
+    def run(self):
+        breath = BreathingAgitation(self.main_thread, random.uniform(0.1, 0.9))
+        breath.start()
+        looking = HeadTurnAngularVelocity(self.main_thread, random.uniform(0.1, 0.9))
+        looking.start()
+        blinking = BlinkingAgitation(self.main_thread)
+        blinking.start()
+        while not self.__signalExit__:
+            self.wait(0.3)
+        breath.signal_exit()
+        looking.signal_exit()
+        blinking.signal_exit()
+
+class HeartbeatAndLook(StrategyThread):
+    def __init__(self, main_thread, agitation=0.5):
+        StrategyThread.__init__(self, main_thread, 'HeartbeatAndLook')
+
+    def run(self):
+        heartbeat = HeartbeatBody(self.main_thread)
+        heartbeat.start()
+        looking = HeadTurnAngularVelocity(self.main_thread)
+        looking.start()
+        blinking = BlinkingAgitation(self.main_thread)
+        blinking.start()
+        while not self.__signalExit__:
+            self.wait(0.3)
+        heartbeat.signal_exit()
+        looking.signal_exit()
+        blinking.signal_exit()
+
 class HeartbeatAgitation(StrategyThread):
     """All lights pulsate like a heartbeat.
     Faster heartbeat when agitation is higher.
@@ -196,6 +271,7 @@ class CleaningStrategy(StrategyThread):
         self.wait(self.t * 8.5)
 
 class SimpleAuto(StrategyThread):
+
     def __init__(self, main_thread):
         StrategyThread.__init__(self, main_thread, 'SimpleAuto')
         self.servo = self.main_thread.get_servo('head')
@@ -203,7 +279,7 @@ class SimpleAuto(StrategyThread):
         self.eye_left = self.main_thread.get_dimmer('eye_left')
         self.eye_right = self.main_thread.get_dimmer('eye_right')
 
-    def lookAroundAndBreath(self, t=20, agitation = 0.5):
+    def lookAroundAndBreath(self, t=20, agitation=0.5):
         looking = HeadTurnAngularVelocity(self.main_thread)
         breathing = BreathingAgitation(self.main_thread, agitation)
         blinking = BlinkingAgitation(self.main_thread, agitation)
@@ -217,6 +293,42 @@ class SimpleAuto(StrategyThread):
         blinking.signal_exit()
         while looking.is_alive() or breathing.is_alive() or blinking.is_alive():
             self.wait(0.05)
+
+    def heartbeatBody(self, beat_start=0.2, beat_end=0.75, t=16):
+        beat_delta = beat_start-beat_end
+        if beat_delta < 0:
+            beat_delta *= -1
+        a_step = beat_delta / t
+        heartbeat = HeartbeatBody(self.main_thread, beat_start)
+        heartbeat.eye_delta = -0.1
+        heartbeat.start()
+        if beat_end < beat_start:
+            while heartbeat.agitation > beat_end and not self.__signalExit__:
+                self.wait(1)
+                heartbeat.agitation -= a_step
+        else:
+            while heartbeat.agitation < beat_end and not self.__signalExit__:
+                self.wait(1)
+                heartbeat.agitation += a_step
+        heartbeat.signal_exit()
+
+    def heartbeat(self, beat_start=0.2, beat_end=0.75, t=16):
+        beat_delta = beat_start-beat_end
+        if beat_delta < 0:
+            beat_delta *= -1
+        a_step = beat_delta / t
+        heartbeat = HeartbeatAgitation(self.main_thread, beat_start)
+        heartbeat.eye_delta = -0.1
+        heartbeat.start()
+        if beat_end < beat_start:
+            while heartbeat.agitation > beat_end and not self.__signalExit__:
+                self.wait(1)
+                heartbeat.agitation -= a_step
+        else:
+            while heartbeat.agitation < beat_end and not self.__signalExit__:
+                self.wait(1)
+                heartbeat.agitation += a_step
+        heartbeat.signal_exit()
 
     def lookAndHeartbeat(self):
         self.turnFar()
@@ -290,6 +402,28 @@ class SimpleAuto(StrategyThread):
                 self.wait(0.3)
                 self.cleaning()
 
+    def sayNo(self):
+        rest_angle = 70
+        delta_angle = 35
+        t = 0.53
+
+        self.servo.add(float('nan'), rest_angle, 1, 1, True)
+        self.wait(1.1)
+
+        step = 30
+        posAngle = rest_angle + delta_angle
+        negAngle = rest_angle - delta_angle
+        self.servo.add(float('nan'), negAngle, t, step)
+        self.servo.add(float('nan'), posAngle, t, step)
+        self.servo.add(float('nan'), negAngle, t, step)
+        self.servo.add(float('nan'), posAngle, t, step)
+        self.servo.add(float('nan'), negAngle, t, step)
+        self.servo.add(float('nan'), posAngle, t, step)
+        self.servo.add(float('nan'), negAngle, t, step)
+        self.servo.add(float('nan'), posAngle, t, step)
+        self.servo.add(float('nan'), rest_angle, t*0.5)
+        self.wait(t * 8.5)
+
     def cleaning(self):
         rest_angle = 70
         delta_angle = 35
@@ -333,9 +467,40 @@ class SimpleAuto(StrategyThread):
         return r
 
     def run(self):
+        while not self.__signalExit__:
+            self.lookyEyes(random.randint(2, 5))
+            self.wait(3)
+
+        while not self.__signalExit__:
+            self.heartbeatBody(0.2, 0.75, 20)
+            self.sayNo()
+            self.wait(1)
+            self.heartbeatBody(0.75, 0.2, 20)
+            self.sayNo()
+            self.wait(1)
+
+        while not self.__signalExit__:
+            self.lookAroundAndBreath(25, 1)
+            self.sayNo()
+            self.wait(1)
+            self.lookAroundAndBreath(25, 0)
+            self.sayNo()
+            self.wait(1)
+
+        self.heartbeat(0.3, 1, 20)
+
+        self.lookyEyes(random.randint(2, 5))
+        self.lookAndHeartbeat()
+        self.lookAroundAndBreath(15, 0.5)
+        self.cleanUntilDone()
+        self.lookAroundAndBreath(15, 0)
+        self.sayNo()
+        self.lookAroundAndBreath(15, 1)
+
         r = -1
         while not self.__signalExit__:
-            r = self.newR(r, 4)
+            r = self.newR(r, 5)
+            logging.debug("******** SimpleAuto doing %i" % r)
             if r == 0:
                 self.lookyEyes(random.randint(2, 5))
             elif r == 1:
@@ -346,6 +511,8 @@ class SimpleAuto(StrategyThread):
                 self.cleanUntilDone()
             elif r == 4:
                 self.lookAroundAndBreath(random.uniform(10, 30), random.uniform(0, 1))
+            elif r == 5:
+                self.sayNo()
 
 class AutoStrategy(StrategyThread):
     """
