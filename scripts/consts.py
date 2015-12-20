@@ -2,4 +2,4 @@ STATE_DISCONNECTED = 0
 STATE_CONNECTED = 1
 
 # 60s timeout receiving commands from master
-SLAVE_TIMEOUT = 60
+SLAVE_TIMEOUT = 240

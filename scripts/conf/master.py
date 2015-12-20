@@ -47,7 +47,7 @@ SERVO_CONTROL = {
 #
 # networking
 #
-NETWORK_CONNECT_RETRY_DELAY = 3
+NETWORK_CONNECT_RETRY_DELAY = 1
 
 # information about where to send data
 CLIENT_MASTER_IP = '10.0.0.1'
@@ -60,9 +60,12 @@ MASTER_IP = '0.0.0.0'
 MASTER_PORT = 12345
 
 MASTER_PLAYLIST = [
-    'AutoClient',
+    'Breathing',
     'SimpleMasterStrategy',
+    'AutoClient',
     'NightOwls',
     'LightUp',
-    'Dancer'
+    'Dancer',
+    'Headshake',
+    'Sleep'
 ]

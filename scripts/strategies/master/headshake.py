@@ -6,7 +6,7 @@ import random
 from time import sleep
 from strategies.base import StrategyThread
 
-class LightUp(StrategyThread):
+class Headshake(StrategyThread):
     body_parts = ['eye_left', 'eye_right', 'body']
 
     """
@@ -17,7 +17,7 @@ class LightUp(StrategyThread):
         :param main_thread: SnowlyServer
         :return:
         """
-        StrategyThread.__init__(self, main_thread, 'LightUp')
+        StrategyThread.__init__(self, main_thread, 'Headshake')
 
     def startup(self):
         # fade down all leds
@@ -46,7 +46,7 @@ class LightUp(StrategyThread):
         self.wait(5)
 
     def run(self):
-        logging.debug('- using LightUp.run')
+        logging.debug('- using Headshake.run')
         self.main_thread.send_command(self.main_thread.get_client_ids(), {
             'command': 'switch_strategy',
             'strategy': None
@@ -55,7 +55,7 @@ class LightUp(StrategyThread):
 
         logging.debug('- switch to direct control ---------------------->')
         run_startup = True
-        duration = 40.0
+        duration = 1.0
 
         start_time = time.time()
         while not self.__signalExit__ and time.time() - start_time < duration:
@@ -65,12 +65,11 @@ class LightUp(StrategyThread):
                 'strategy': None
             })
 
-            common_head_angle = 80
-
             # self.main_thread.send_command({
             #     'command': 'sync'
             # })
             # self.wait(2.0)
+            self.wait(5.0)
 
             owls = self.main_thread.get_client_ids()
             if run_startup and len(owls) > 0:
@@ -81,11 +80,19 @@ class LightUp(StrategyThread):
                     self.main_thread.send_command([owl], {
                         'command': 'move',
                         'id': 'head',
-                        'end_angle': common_head_angle,
-                        'duration': 4.0,
+                        'end_angle': 180.0,
+                        'duration': 0.5,
+                        'clear': False
+                    })
+                    self.wait(1.0)
+                    self.main_thread.send_command([owl], {
+                        'command': 'move',
+                        'id': 'head',
+                        'end_angle': 0.0,
+                        'duration': 0.5,
                         'clear': False
                     })
 
-            self.wait(1.0)
+            self.wait(2.0)
 
-        logging.debug('Lightup finished')
+        logging.debug('Headshake finished')

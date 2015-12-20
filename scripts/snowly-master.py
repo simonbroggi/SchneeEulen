@@ -17,11 +17,14 @@ from strategies.master.nightowls import NightOwls
 from strategies.master.simple import SimpleMasterStrategy
 from strategies.master.lightup import LightUp
 from strategies.master.dancer import Dancer
+from strategies.master.breathing import Breathing
+from strategies.master.headshake import Headshake
+from strategies.master.sleep import Sleep
 from strategies.master.autoclient import AutoClient
 
 # logging configuration
 log = logging.getLogger(__name__)
-logging.basicConfig(level=logging.DEBUG, format='[%(levelname)s] (%(threadName)-10s) %(message)s')
+logging.basicConfig(level=logging.INFO, format='[%(levelname)s] (%(threadName)-10s) %(message)s')
 
 """
 LENZERHEIDE ZAUBERWALD 2015 * SCHNEE-EULEN * Snowy owls (master)
@@ -155,8 +158,9 @@ class SnowlyServer(Server):
                     #logging.debug('playlist')
                     active_item = self.playlist[playlist_index]
                     playlist_index = (playlist_index + 1) % len(self.playlist)
-                    strategy_class = globals()[active_item]
-                    self.switch_strategy(strategy_class)
+                    if active_item not in ['Sleep']:
+                        strategy_class = globals()[active_item]
+                        self.switch_strategy(strategy_class)
                 else:
                     # no playlist
                     strategies = sorted(self.strategies.items(), key=lambda x: x[1]['weight'])
@@ -202,11 +206,15 @@ class SnowlyNet(threading.Thread):
         log.debug("Snowly Server initializing at %s:%s" % (conf.MASTER_IP, conf.MASTER_PORT))
         server = SnowlyServer(localaddr=(conf.MASTER_IP, conf.MASTER_PORT), conf=conf)
 
-        # register client strategies (stoppable threads)
-        server.register_strategy(NightOwls, 0)
-        server.register_strategy(LightUp, 1)
-        server.register_strategy(Dancer, 2)
-        server.register_strategy(SimpleMasterStrategy, 999)
+        # register master strategies (stoppable threads)
+        server.register_strategy(AutoClient, 0)
+        server.register_strategy(NightOwls, 1)
+        server.register_strategy(LightUp, 2)
+        server.register_strategy(Dancer, 3)
+        server.register_strategy(Breathing, 4)
+        server.register_strategy(Headshake, 5)
+        server.register_strategy(Sleep, 6)
+        server.register_strategy(SimpleMasterStrategy, 7)
 
         self.server = server
 

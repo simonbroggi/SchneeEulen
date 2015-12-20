@@ -131,7 +131,7 @@ class NightOwls(StrategyThread):
         self.wait(5)
 
         start_time = time.time()
-        duration_phase_blinking = 30
+        duration_phase_blinking = random.uniform(30.0, 60.0)
         while not self.__signalExit__:
             self.startup()
 
@@ -157,7 +157,7 @@ class NightOwls(StrategyThread):
 
             self.wait(5)
 
-            self.wave()
+            #self.wave()
             self.light_down()
 
             # self.main_thread.send_command(self.main_thread.get_client_ids(), {

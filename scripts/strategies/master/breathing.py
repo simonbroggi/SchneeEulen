@@ -7,7 +7,7 @@ import math
 from time import sleep
 from strategies.base import StrategyThread
 
-class AutoClient(StrategyThread):
+class Breathing(StrategyThread):
     body_parts = ['eye_left', 'eye_right', 'body']
     all_owls = ['KEVIN', 'MAJA', 'LISA', 'MARTHA', 'KLAUS']
 
@@ -16,7 +16,7 @@ class AutoClient(StrategyThread):
         :param main_thread: SnowlyServer
         :return:
         """
-        StrategyThread.__init__(self, main_thread, 'AutoClient')
+        StrategyThread.__init__(self, main_thread, 'Breathing')
 
     def startup(self):
         # fade down all owls
@@ -37,13 +37,14 @@ class AutoClient(StrategyThread):
         self.wait(3.0)
 
     def run(self):
-        logging.debug('AutoClient.run')
+        logging.debug('Breathing.run')
+        self.wait(5)
 
         start_time = time.time()
-        duration = random.uniform(180.0, 600.0)
+        duration = random.uniform(60.0, 120.0)
 
         while not self.__signalExit__:
-            active_strategy = 'SimpleAuto'
+            active_strategy = 'BreathAndLook'
             self.startup()
 
             while not self.__signalExit__ and time.time() - start_time < duration:
@@ -56,4 +57,4 @@ class AutoClient(StrategyThread):
             # terminate
             self.signal_exit()
 
-        logging.debug('AutoClient finished')
+        logging.debug('Breathing finished')

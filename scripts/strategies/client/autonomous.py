@@ -1,7 +1,6 @@
 
 import logging
 import threading
-import pigpio
 import random
 from time import sleep
 from strategies.base import StrategyThread
@@ -106,24 +105,30 @@ class HeartbeatAgitation(StrategyThread):
         self.mid = 0.35
         self.midLow = 0.15
         self.high = 0.7
-        self.eye_delta = - 0.3
+        self.eye_delta = 0.0
 
     def add(self, start_val, end_val, duration, step_size=2, clear=False):
         self.body_dimmer.add(start_val, end_val, duration, step_size, clear)
-        eye_start = start_val + self.eye_delta
-        if eye_start <= 0.0:
-            eye_start = 0.0
-        if eye_start >= 1.0:
-            eye_start = 1.0
-        eye_end = end_val + self.eye_delta
-        if eye_end <= 0.0:
-            eye_end = 0.0
-        if eye_end >= 1.0:
-            eye_end = 1.0
-        self.eye_left.add(start_val + self.eye_delta, end_val + self.eye_delta, duration, step_size, clear)
-        self.eye_right.add(start_val + self.eye_delta, end_val + self.eye_delta, duration, step_size, clear)
+
+        #self.eye_left.add(start_val, end_val*0.2, duration, step_size, clear)
+        #self.eye_right.add(start_val, end_val*0.2, duration, step_size, clear)
+
+        # eye_start = start_val + self.eye_delta
+        # if eye_start <= 0.0:
+        #     eye_start = 0.0
+        # if eye_start >= 1.0:
+        #     eye_start = 1.0
+        # eye_end = end_val + self.eye_delta
+        # if eye_end <= 0.0:
+        #     eye_end = 0.0
+        # if eye_end >= 1.0:
+        #     eye_end = 1.0
+        # self.eye_left.add(start_val + self.eye_delta, end_val + self.eye_delta, duration, step_size, clear)
+        # self.eye_right.add(start_val + self.eye_delta, end_val + self.eye_delta, duration, step_size, clear)
 
     def run(self):
+        blinking = BlinkingAgitation(self.main_thread)
+        blinking.start()
         while not self.__signalExit__:
             beatTime = 1.0 * (1.5-self.agitation)
             first = beatTime * 0.2
@@ -136,6 +141,8 @@ class HeartbeatAgitation(StrategyThread):
             self.add(float('nan'), self.low, recover)
             self.wait(beatTime + 0.3)
         logging.debug('heartbeat finished')
+        blinking.signal_exit()
+        self.wait(1)
 
 class BlinkingAgitation(StrategyThread):
     """Blinks (with both eyes) more frequent when agitation is higher.
@@ -145,12 +152,12 @@ class BlinkingAgitation(StrategyThread):
     def __init__(self, main_thread, agitation=0.5):
         StrategyThread.__init__(self, main_thread, 'BlinkingAgitation')
         self.agitation = agitation
-        self.open = 0.08  # 0.3
-        self.closed = 0.005  # 0.05
+        self.open = 0.1  # 0.3
+        self.closed = 0.0  # 0.05
         self.eye_left = self.main_thread.get_dimmer('eye_left')
         self.eye_right = self.main_thread.get_dimmer('eye_right')
 
-    def add(self, start_val, end_val, duration, step_size=2, clear=False):
+    def add(self, start_val, end_val, duration, step_size=3, clear=False):
         self.eye_left.add(start_val, end_val, duration, step_size, clear)
         self.eye_right.add(start_val, end_val, duration, step_size, clear)
 
@@ -158,7 +165,7 @@ class BlinkingAgitation(StrategyThread):
         doubleBlink = False
         while not self.__signalExit__:
             closeT = 0.18
-            openT = 0.32
+            openT = 0.3
             self.add(float('nan'), self.closed, closeT)
             self.add(float('nan'), self.open, openT)
             self.wait(closeT + openT)
@@ -356,9 +363,9 @@ class SimpleAuto(StrategyThread):
         self.wait(t)
 
     def fadeLow(self, t=1.5):
-        self.body.add(float('nan'), 0.03, t, 1, True)
-        self.eye_left.add(float('nan'), 0.0022, t, 1, True)
-        self.eye_right.add(float('nan'), 0.0022, t, 1, True)
+        self.body.add(float('nan'), 0.05, t, 1, True)
+        self.eye_left.add(float('nan'), 0.01, t, 1, True)
+        self.eye_right.add(float('nan'), 0.01, t, 1, True)
         self.wait(t)
 
     def lookyEyes(self, n=3):
@@ -493,6 +500,8 @@ class SimpleAuto(StrategyThread):
         while not self.__signalExit__:
             r = self.newR(r, 7)
             logging.debug("******** SimpleAuto doing %i" % r)
+            #self.heartbeatBody(0.2, 0.75, 20)
+            #self.lookAndHeartbeat()
             if r == 0:
                 self.heartbeatBody(0.2, 0.75, 20)
             elif r == 1:
@@ -562,4 +571,4 @@ class AutoStrategy(StrategyThread):
             logging.debug('...waiting for breathing, blinking and looking to finish gracefully...')
             sleep(0.01)
 
-        logging.debug('SimpleRandomizedStrategy finished')
+        logging.debug('AutoStrategy finished')

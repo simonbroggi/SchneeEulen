@@ -12,17 +12,19 @@ class Servo(threading.Thread):
     stop_op = False
     min_angle = 0
     max_angle = 180
-    pw_min = 600
-    pw_max = 1800
+    pw_min = 500
+    pw_max = 2500
     freq = 50
     direction = 'normal'
     gpio = None
     current_val = pw_min
+    exitEvent = None
 
     def __init__(self, gpio, min_angle=0.0, max_angle=180.0, pw_min=800, pw_max=2500, freq=50, direction='normal'):
         logging.debug('Initializing pwm servo controller gpio=%s min_angle=%s max_angle=%s limit_min=%s limit_max=%s direction=%s' % (gpio, min_angle, max_angle, pw_min, pw_max, direction))
         threading.Thread.__init__(self, name="Servo-%s" % gpio)
         self.daemon = True
+        self.exitEvent = threading.Event()
 
         # socket connection to pigpiod
         self.pi = pigpio.pi()
@@ -78,48 +80,56 @@ class Servo(threading.Thread):
         return self.pw_min + int(round(((angle - self.min_angle)/angle_range) * pulse_range))
 
     def run_op(self, op):
-        #logging.debug('servo run op=%s' % op)
+        try:
+            #logging.debug('servo run op=%s' % op)
 
-        start_angle = op['start_angle']
-        end_angle = op['end_angle']
+            start_angle = op['start_angle']
+            end_angle = op['end_angle']
 
-        if self.direction == 'inverse':
-            start_angle = 180.0 - start_angle
-            end_angle = 180.0 - end_angle
+            if self.direction == 'inverse':
+                start_angle = 180.0 - start_angle
+                end_angle = 180.0 - end_angle
 
-        start_pw = self.pw_min
-        end_pw = self.pw_max
-        if math.isnan(start_angle):
-            start_pw = self.current_val
-        else:
-            start_pw = self.angle_to_pwm(start_angle)
+            start_pw = self.pw_min
+            end_pw = self.pw_max
+            if math.isnan(start_angle):
+                start_pw = self.current_val
+            else:
+                start_pw = self.angle_to_pwm(start_angle)
 
-        if math.isnan(end_angle):
-            end_pw = self.current_val
-        else:
-            end_pw = self.angle_to_pwm(end_angle)
+            if math.isnan(end_angle):
+                end_pw = self.current_val
+            else:
+                end_pw = self.angle_to_pwm(end_angle)
 
-        start_pw = min(max(start_pw, self.pw_min), self.pw_max)
-        end_pw = min(max(end_pw, self.pw_min), self.pw_max)
+            start_pw = min(max(start_pw, self.pw_min), self.pw_max)
+            end_pw = min(max(end_pw, self.pw_min), self.pw_max)
 
-        step_size = op['step_size']
-        if start_pw > end_pw:
-            step_size = - abs(op['step_size'])
+            step_size = op['step_size']
+            if start_pw > end_pw:
+                step_size = - abs(op['step_size'])
 
-        step_count = abs((end_pw - start_pw + 1)/op['step_size'])
-        step_delay = op['duration'] / step_count
+            step_count = abs((end_pw - start_pw + 1)/op['step_size'])
+            if step_count == 0:
+                logging.warning('warning: no servo steps needed')
+                step_delay = 0
+            else:
+                step_delay = op['duration'] / step_count
 
-        pw = start_pw
-        while self.signal and not self.stop_op and step_count > 0:
-            #logging.debug('---> set servo pulsewidth %d' % pw)
-            self.pi.set_servo_pulsewidth(self.gpio, pw)
-            self.current_val = pw
-            pw += step_size
-            time.sleep(step_delay)
-            step_count -= 1
+            pw = start_pw
+            while self.signal and not self.stop_op and step_count > 0:
+                #logging.debug('---> set servo pulsewidth %d' % pw)
+                self.pi.set_servo_pulsewidth(self.gpio, pw)
+                self.current_val = pw
+                pw += step_size
+                if self.signal:
+                    self.exitEvent.wait(step_delay)
+                step_count -= 1
 
-        self.current_val = end_pw
-        self.pi.set_servo_pulsewidth(self.gpio, end_pw)
+            self.current_val = end_pw
+            self.pi.set_servo_pulsewidth(self.gpio, end_pw)
+        except Exception as e:
+            logging.error(e)
 
     def run(self):
         self.pwm_init()
@@ -140,6 +150,7 @@ class Servo(threading.Thread):
     """ Signal shutdown wish """
     def signal_exit(self):
         self.signal = False
+        self.exitEvent.set()
 
 if __name__ == "__main__":
     log = logging.getLogger(__name__)

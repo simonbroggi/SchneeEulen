@@ -34,6 +34,78 @@ class SimpleMasterStrategy(StrategyThread):
                 })
         self.wait(5)
 
+    def stripes(self, owls):
+        start_time = time.time()
+        duration = random.uniform(30.0, 70.0)
+        wait_time = random.uniform(1.0,5.0)
+        while not self.__signalExit__ and time.time()-start_time < duration:
+            for owl in owls:
+                logging.debug("owl %s" % owl)
+                logging.debug("clientsbyid %s" % self.main_thread.clientsById)
+
+                for part in self.body_parts:
+                    self.main_thread.send_command([owl], {
+                        'command': 'dim',
+                        'id': part,
+                        'end_val': 1.0,
+                        'duration': 0.5,
+                        'step': 4,
+                        'clear': True
+                    })
+                    self.main_thread.send_command([owl], {
+                        'command': 'dim',
+                        'id': part,
+                        'end_val': 0.0,
+                        'duration': 0.5,
+                        'step': 4
+                    })
+
+                self.wait(0.33)
+            self.wait(wait_time)
+
+    def dimAllTo(self, val_body, val_eyes, duration):
+        owls = self.main_thread.get_client_ids()
+        logging.debug('got owls %s' % owls)
+        if self.__signalExit__:
+            return
+
+        self.main_thread.send_command(owls, {
+            'command': 'dim',
+            'id': 'body',
+            'end_val': val_body,
+            'duration': duration,
+            'step': 1,
+            'clear': False
+        })
+        eyes = ['eye_left', 'eye_right']
+        for part in eyes:
+            self.main_thread.send_command(owls, {
+                'command': 'dim',
+                'id': part,
+                'end_val': val_eyes,
+                'duration': duration,
+                'step': 1,
+                'clear': False
+            })
+
+    def head_shake(self, owls):
+        start_time = time.time()
+        duration = random.uniform(20.0, 60.0)
+        wait_time = random.uniform(1.0,5.0)
+
+        while not self.__signalExit__ and time.time()-start_time < duration:
+            common_head_angle = random.uniform(0.0, 180.0)
+            for owl in owls:
+                self.main_thread.send_command([owl], {
+                    'command': 'move',
+                    'id': 'head',
+                    'end_angle': common_head_angle,
+                    'duration': 4.0,
+                    'clear': False
+                })
+
+            self.wait(wait_time)
+
     def run(self):
         logging.debug('- using SimpleMasterStrategy.run adv')
 
@@ -72,37 +144,13 @@ class SimpleMasterStrategy(StrategyThread):
 
             if not run_startup:
                 logging.debug('- got owls %s' % owls)
-                for owl in owls:
-                    logging.debug("owl %s" % owl)
-                    logging.debug("clientsbyid %s" % self.main_thread.clientsById)
 
-                    for part in self.body_parts:
-                        self.main_thread.send_command([owl], {
-                            'command': 'dim',
-                            'id': part,
-                            'end_val': 1.0,
-                            'duration': 1.0,
-                            'step': 4,
-                            'clear': True
-                        })
-                        self.main_thread.send_command([owl], {
-                            'command': 'dim',
-                            'id': part,
-                            'end_val': 0.0,
-                            'duration': 1.0,
-                            'step': 4
-                        })
+                self.stripes(owls)
+                self.dimAllTo(0.33, 0.03, 1.0)
+                self.wait(2.0)
 
-                    self.wait(0.5)
+                self.head_shake(owls)
 
-                for owl in owls:
-                    self.main_thread.send_command([owl], {
-                        'command': 'move',
-                        'id': 'head',
-                        'end_angle': common_head_angle,
-                        'duration': 4.0,
-                        'clear': False
-                    })
             # self.main_thread.send_command(self.main_thread.get_client_ids(), {
             #     'command': 'dim',
             #     'id': 'eye_left',

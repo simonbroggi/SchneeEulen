@@ -40,7 +40,7 @@ LIGHT_DIMMERS = {
 SERVO_CONTROL = {
     'head': {
         'gpio': 12,
-        'direction': 'inverse'
+        'direction': 'normal'
     }
 }
 
@@ -48,7 +48,7 @@ SERVO_CONTROL = {
 #
 # networking
 #
-NETWORK_CONNECT_RETRY_DELAY = 3
+NETWORK_CONNECT_RETRY_DELAY = 1
 
 # information about where to send data
 CLIENT_MASTER_IP = '10.0.0.1'

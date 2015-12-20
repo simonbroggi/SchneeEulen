@@ -47,7 +47,7 @@ SERVO_CONTROL = {
 #
 # networking
 #
-NETWORK_CONNECT_RETRY_DELAY = 10
+NETWORK_CONNECT_RETRY_DELAY = 1
 
 # information about where to send data
 CLIENT_MASTER_IP = '10.0.0.1'

@@ -25,7 +25,7 @@ __exitSignal__ = False
 
 # logging configuration
 log = logging.getLogger(__name__)
-logging.basicConfig(level=logging.DEBUG, format='[%(levelname)s] (%(threadName)-10s) %(message)s')
+logging.basicConfig(level=logging.INFO, format='[%(levelname)s] (%(threadName)-10s) %(message)s')
 
 
 # generic network listener, used for reconnecting
