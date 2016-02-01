@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
 # configuration template to be used in git
 # copy to conf.py locally and adjust
 import logging
@@ -68,4 +71,15 @@ MASTER_PLAYLIST = [
     'Dancer',
     'Headshake',
     'Sleep'
+]
+
+MASTER_PLAYLIST_DESC = [
+    'Einfaches Atmen und leichte Kopfbewegungen',
+    'Lichtstreifen von Eule zu Eule',
+    'Herzschlag, Nervosität usw. - das volle Programm',
+    'Nachteulen - nur die Augen leuchten im Dunkeln auf',
+    'Foto-Modus: alle dezent hell für 30sec',
+    'Tanz-Choreographie - siehe Lenzerheide Zauberwald',
+    'Alle drehen gemeinsam den Kopf hin und her',
+    'Dunkles Schlafen... für 30s'
 ]

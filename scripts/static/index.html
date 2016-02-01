@@ -11,6 +11,36 @@
     <link href="static/css/bootstrap.min.css" rel="stylesheet">
   </head>
   <style>
+    html {
+      height: 100%;
+    }
+    body {
+      background: #000 url('/static/images/owlbg.jpg') center center no-repeat;
+      background-size: auto 100%;
+      color: #fff;
+      font: 1.5em/1.4 Helvetica,Arial,sans-serif;
+      text-shadow: 1px 1px 1px #000;
+      text-align: center;
+
+    }
+    h1 {
+      font-weight: bold;
+      margin-bottom: 50vh;
+    }
+    .btn {
+      font-weight: bold;
+    }
+    .btn-default:active,
+    .btn-default.active:hover,
+    .btn.active:focus {
+      background-color: darkred;
+      color: white;
+    }
+    .btn-default.active {
+      background-color: green;
+      color: white;
+      border: 1px solid darkgreen;
+    }
     button.active {
       background-color: lightgreen;
     }
@@ -23,6 +53,7 @@
   <div class="container-fluid">
     <h1>Snowy Owls</h1>
 
+    <p>Willkommen bei den Schnee-Eulen. Hier kannst du ihnen einflüstern, was sie machen sollen. Bitte jeweils etwas Geduld, es dauert ein paar Sekunden bis sie sich anpassen.</p>
     <div class="row">
       <div class="master-strategies">
 

@@ -138,6 +138,8 @@ class SnowlyServer(Server):
         logging.debug("Snowly Server ready %s" % time.time())
 
         self.playlist = self.conf.MASTER_PLAYLIST
+        self.playlist_desc = self.conf.MASTER_PLAYLIST_DESC
+
         if self.playlist is None:
             self.playlist = []
 
@@ -271,7 +273,8 @@ class SnowlyWebService:
                     'clients': self.server.clientsById.keys(),
                     'active_strategy': str(self.server.active_strategy.__class__.__name__),
                     #'master_strategies': self.server.strategies.keys()
-                    'playlist': self.server.playlist
+                    'playlist': self.server.playlist,
+                    'playlist_desc': self.server.playlist_desc
                 }
             else:
                 return {'available_commands': {

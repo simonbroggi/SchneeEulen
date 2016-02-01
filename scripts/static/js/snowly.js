@@ -26,7 +26,7 @@
               if (data['active_strategy'] == val) {
                   button.addClass('active');
               }
-              $('.master-strategies').append(button);
+              $('.master-strategies').append($('<div/>').append(button).append($('<p/>').text(data['playlist_desc'][i])));
           });
         });
     }
