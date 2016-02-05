@@ -27,8 +27,16 @@
       font-weight: bold;
       margin-bottom: 50vh;
     }
+    p {
+      margin-bottom: 1em;
+      font-weight: bold;
+    }
+    .intro {
+      font-weight: bold;
+    }
     .btn {
       font-weight: bold;
+      margin-bottom: 0.25em;
     }
     .btn-default:active,
     .btn-default.active:hover,
@@ -40,6 +48,9 @@
       background-color: green;
       color: white;
       border: 1px solid darkgreen;
+    }
+    .list {
+      margin-top: 1.5em;
     }
     button.active {
       background-color: lightgreen;
@@ -53,10 +64,11 @@
   <div class="container-fluid">
     <h1>Snowy Owls</h1>
 
-    <p>Willkommen bei den Schnee-Eulen. Hier kannst du ihnen einflüstern, was sie machen sollen. Bitte jeweils etwas Geduld, es dauert ein paar Sekunden bis sie sich anpassen.</p>
-    <div class="row">
-      <div class="master-strategies">
+    <p class="intro">Willkommen bei den Schnee-Eulen. Hier kannst du ihnen einflüstern, was sie machen sollen. Bitte jeweils etwas Geduld, es dauert ein paar Sekunden bis sie sich anpassen.</p>
+    <button class="btn refresh"><span class="glyphicon glyphicon-refresh"></span> Ansicht aktualisieren</button>
 
+    <div class="row list">
+      <div class="master-strategies">
       </div>
     </div>
 
