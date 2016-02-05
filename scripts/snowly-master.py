@@ -365,7 +365,7 @@ if __name__ == '__main__':
     #webapp = SnowlyWeb()
     #webapp.snowlcontrol = SnowlyWebService(snowlynet)
 
-    cherrypy.server.socket_port = 8080
+    cherrypy.server.socket_port = 8081
     cherrypy.server.socket_host = '0.0.0.0'
 
     if hasattr(cherrypy.engine, 'signal_handler'):
