@@ -7,6 +7,7 @@ import logging
 
 class StrategyThread(threading.Thread):
     subthreads = []
+    last_update = -1
     main_thread = None
     """:type : SnowlyClient"""
 
@@ -27,10 +28,15 @@ class StrategyThread(threading.Thread):
             time.sleep(minSleepTime)
 
     def run(self):
-        #logging.debug('- BaseStrategy.run __signalExit__=%s' % self.__signalExit__)
+        self.last_update = time.time()
         while not self.__signalExit__:
             #logging.debug("-- BaseStrategy.run step")
             self.wait(1.0)
+
+    def keep_alive(self):
+        t = time.time()
+        logging.debug('%s got keepalive at %s' % (self.getName(), t))
+        self.last_update = t
 
     def signal_exit(self):
         logging.debug('Thread exit signalled - terminating gracefully')

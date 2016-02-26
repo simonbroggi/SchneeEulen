@@ -70,7 +70,12 @@ MASTER_PLAYLIST = [
     'LightUp',
     'Dancer',
     'Headshake',
-    'Sleep'
+    'Sleep',
+    'Idle'
+]
+
+MASTER_SKIP_LIST = [
+  'Idle'
 ]
 
 MASTER_PLAYLIST_DESC = [
@@ -81,5 +86,6 @@ MASTER_PLAYLIST_DESC = [
     'Foto-Modus: alle dezent hell für 30sec',
     'Tanz-Choreographie - siehe Lenzerheide Zauberwald',
     'Alle drehen gemeinsam den Kopf hin und her',
-    'Dunkles Schlafen... für 30s'
+    'Dunkles Schlafen... für 30s',
+    'Dolce far niente - für manuelle Steuerung'
 ]

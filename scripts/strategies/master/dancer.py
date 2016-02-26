@@ -137,9 +137,9 @@ class Dancer(StrategyThread):
         })
         self.wait(10.0)
 
-        self.turn_all_heads_to(180.0, 0.5)
+        self.turn_all_heads_to(30.0, 0.5)
         self.lightup()
-        self.turn_all_heads_to(180.0, 0.5)
+        self.turn_all_heads_to(30.0, 0.5)
         if self.__signalExit__:
             return
 

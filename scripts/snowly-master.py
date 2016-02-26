@@ -21,10 +21,11 @@ from strategies.master.breathing import Breathing
 from strategies.master.headshake import Headshake
 from strategies.master.sleep import Sleep
 from strategies.master.autoclient import AutoClient
+from strategies.master.idle import Idle
 
 # logging configuration
 log = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO, format='[%(levelname)s] (%(threadName)-10s) %(message)s')
+logging.basicConfig(level=logging.DEBUG, format='[%(levelname)s] (%(threadName)-10s) %(message)s')
 
 """
 LENZERHEIDE ZAUBERWALD 2015 * SCHNEE-EULEN * Snowy owls (master)
@@ -58,6 +59,7 @@ class SnowlyServer(Server):
     delta_time = 0
     strategies = {}
     playlist = []
+    skip_list = []
 
     active_strategy = None
 
@@ -131,6 +133,7 @@ class SnowlyServer(Server):
         self.active_strategy.start()
         logging.debug('active strategy is now %s' % self.active_strategy)
 
+
     """
     Main loop
     """
@@ -138,6 +141,7 @@ class SnowlyServer(Server):
         logging.debug("Snowly Server ready %s" % time.time())
 
         self.playlist = self.conf.MASTER_PLAYLIST
+        self.skip_list = self.conf.MASTER_SKIP_LIST
         self.playlist_desc = self.conf.MASTER_PLAYLIST_DESC
 
         if self.playlist is None:
@@ -160,7 +164,7 @@ class SnowlyServer(Server):
                     #logging.debug('playlist')
                     active_item = self.playlist[playlist_index]
                     playlist_index = (playlist_index + 1) % len(self.playlist)
-                    if active_item not in ['Sleep']:
+                    if active_item not in self.skip_list:
                         strategy_class = globals()[active_item]
                         self.switch_strategy(strategy_class)
                 else:
@@ -217,6 +221,7 @@ class SnowlyNet(threading.Thread):
         server.register_strategy(Headshake, 5)
         server.register_strategy(Sleep, 6)
         server.register_strategy(SimpleMasterStrategy, 7)
+        server.register_strategy(Idle, 8)
 
         self.server = server
 
@@ -246,7 +251,43 @@ class SnowlyWebService:
             subprocess.call("sudo date -s '{:}'".format(dt.strftime('%Y/%m/%d %H:%M:%S')), shell=True)
         except:
             logging.debug('error setting datetime')
-            
+
+    def exec_manual_command(self, vpath):
+        # send keep alive flag to active (hopefully idle) strategy
+        if self.server.active_strategy is not None:
+            self.server.active_strategy.keep_alive()
+
+        target = vpath[1]
+        angle = vpath[2]
+        light = vpath[3]
+        logging.debug('exec manual command %s %s %s' % (target, angle, light))
+
+        # head rotation
+        cmd = {
+            'command': 'move',
+            'id': 'head',
+            'end_angle': float(angle),
+            'duration': 0.25,
+            'clear': True
+        }
+        self.server.send_command([target], cmd)
+
+        # lights
+        cmd = {
+            'command': 'dim',
+            'id': 'body',
+            'end_val': float(light),
+            'duration': 0.5,
+            'step': 2,
+            'clear': True
+        }
+        self.server.send_command([target], cmd)
+        cmd['clear'] = False
+        cmd['id'] = 'eye_right'
+        self.server.send_command([target], cmd)
+        cmd['id'] = 'eye_left'
+        self.server.send_command([target], cmd)
+
     # def _cp_dispatch(self, vpath):
     #     logging.debug('cp_dispatch:%s' % vpath)
     #     if len(vpath) == 1:
@@ -279,7 +320,9 @@ class SnowlyWebService:
             else:
                 return {'available_commands': {
                     'clients': 'list of connected clients',
-                    'info': 'information about strategies'
+                    'info': 'information about strategies',
+                    'play': 'play scenario',
+                    'send': 'send manual command to owl'
                 }}
         except Exception as e:
             logging.error(e)
@@ -303,6 +346,17 @@ class SnowlyWebService:
                 strategy_class = globals()[vpath[1]]
                 self.server.switch_strategy(strategy_class)
                 return {'result': 'ok'}
+            elif cmd == 'send':
+                strategy_class = globals()["Idle"]
+                if self.server.active_strategy is not None and self.server.active_strategy.__class__ != strategy_class:
+                    logging.info('switching master strategy to idle mode because of <send> command')
+                    self.server.switch_strategy(strategy_class)
+                else:
+                    logging.debug('keep idle strategy running')
+
+                self.exec_manual_command(vpath)
+                return {'result': "ok"}
+
         except Exception as e:
             logging.error(e)
 
