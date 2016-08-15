@@ -4,3 +4,6 @@
 [submodule "libs/cherrypy"]
 	path = libs/cherrypy
 	url = https://github.com/cherrypy/cherrypy.git
+[submodule "libs/WebSocket-for-Python"]
+	path = libs/WebSocket-for-Python
+	url = https://github.com/Lawouach/WebSocket-for-Python.git
