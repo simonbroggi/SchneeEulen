@@ -12,6 +12,11 @@ import cherrypy
 from PodSixNet.Channel import Channel
 from PodSixNet.Server import Server
 
+# websocket support
+from ws4py.server.cherrypyserver import WebSocketPlugin, WebSocketTool
+from ws4py.websocket import WebSocket
+from ws4py.messaging import TextMessage
+
 from strategies.base import StrategyThread
 from strategies.master.nightowls import NightOwls
 from strategies.master.simple import SimpleMasterStrategy
@@ -376,6 +381,13 @@ class SnowlyWebService:
 #        'cherrypy.tools.json_in.on': True
 #    }
 
+class SnowlyWebSocketsHandler(WebSocket):
+    def received_message(self, m):
+        cherrypy.engine.publish('websocket-broadcast', m)
+
+    def closed(self, code, reason="A client left the room without a proper explanation."):
+        cherrypy.engine.publish('websocket-broadcast', TextMessage(reason))
+
 if __name__ == '__main__':
     # owl communication network
     logging.debug('=== initializing owl communication network')
@@ -407,7 +419,11 @@ if __name__ == '__main__':
          '/static': {
              'tools.staticdir.on': True,
              'tools.staticdir.dir': './static'
-         }
+         },
+        '/ws': {
+            'tools.websocket.on': True,
+            'tools.websocket.handler_cls': SnowlyWebSocketsHandler
+        }
     }
 
     # disable logging
@@ -427,6 +443,10 @@ if __name__ == '__main__':
 
     cherrypy.tree.mount(SnowlyWeb(), '', web_conf)
     cherrypy.tree.mount(SnowlyWebService(snowlynet), '/api', api_conf)
+
+    logging.debug('=== initializing websockets')
+    WebSocketPlugin(cherrypy.engine).subscribe()
+    cherrypy.tools.websocket = WebSocketTool()
 
     cherrypy.engine.start()
     #cherrypy.engine.block()
