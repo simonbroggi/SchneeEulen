@@ -75,6 +75,7 @@
   var intersects;
   var pointer = new THREE.Vector2();
   var selectedOwl = document.location.hash.substr(1) || 'KLAUS';
+  var touchOwl;
   var owlSizes = [];
 
   container = document.querySelector('.viewport');
@@ -87,16 +88,82 @@
   NEAR = 1;
   FAR = 10000;
 
+  var sio;
+
+
+  function updateOwl(data) {
+    var index, mesh, duration, angle, currentLight;
+
+    if (data.action == 'command' && data.command == 'move') {
+      index = owlNames.indexOf(data.name);
+      if (index <= 0) return;
+      
+console.log(index,data.name,owlNames);
+      mesh = scene.getObjectByName('HullHead.'+index);
+      angle = mesh.rotation.z;
+
+      // targetRotations[index] = data['end_angle'];
+      console.log('rotating ',index,' to ', targetRotations[index]);
+
+      turnHead(touchOwl, data['end_angle'], data.duration );
+
+    } else
+    if (data.action == 'command' && data.command == 'dim') {
+
+      // index = owlNames.indexOf(data.name);
+      // currentLight = targetAmbients[index];
+      // targetAmbients[index] = data['end_val'];
+    }
+
+  }
+
+  function turnHead(owl, targetAngle, duration) {
+      var mesh = scene.getObjectByName('HullHead.'+owl);
+      new TWEEN.Tween(mesh.rotation).to({ z: targetAngle }, duration).easing(TWEEN.Easing.Linear.None).start();
+  }
+
 
   function init() {
+    //var websocket;
+    //var wsUri = 'ws://' + window.location.host + '/ws';
+    //if (window.WebSocket) {
+    //  websocket = new WebSocket(websocket);
+    //}
+    //else if (window.MozWebSocket) {
+    //  websocket = MozWebSocket(websocket);
+    //}
+    //else {
+    //  console.log('WebSocket Not Supported');
+    //  return;
+    //}
+
+    
+    var websocket = new WebSocket('ws://' + window.location.host + '/ws');
+    websocket.onopen    = function (evt) { console.log("Connected to WebSocket server."); };
+    websocket.onclose   = function (evt) { console.log("Disconnected"); };
+    websocket.onmessage = function (evt) {
+      var msg;
+      try {
+        msg = JSON.parse(evt.data);
+        updateOwl(msg);
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    websocket.onerror   = function (evt) { console.log('Error occured: ' + evt.data); };
+
 
     scene = new THREE.Scene();
     renderer = new THREE.WebGLRenderer({
       antialias: true
     });
     renderer.setSize(WIDTH, HEIGHT);
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.soft = true;
+
+    // not supported on mobile devices
+    //renderer.shadowMap.enabled = false;
+    //renderer.shadowMap.soft = true;
+
+    renderer.shadowMap.enabled = false;
     renderer.shadowMap.type = THREE.PCFShadowMap;
     renderer.shadowMap.autoUpdate = true;
 
@@ -111,9 +178,9 @@
 
     scene.add(camera);
 
-    light = new THREE.DirectionalLight(0x222222);
-    light.position.set(20, 100, 60);
-    light.castShadow = true;
+    light = new THREE.DirectionalLight(0xa7a79e);
+    light.position.set(30, 100, 60);
+    light.castShadow = false;
     light.shadow.cameraLeft = -60;
     light.shadow.cameraTop = -60;
     light.shadow.cameraRight = 60;
@@ -125,22 +192,26 @@
     light.shadow.darkness = .7;
     scene.add(light);
 
-    ambient = new THREE.AmbientLight(0x222222);
+    ambient = new THREE.AmbientLight(0x444749, 0.1); //0x4c555e
     scene.add(ambient);
 
     loader = new THREE.ObjectLoader();
 
     // load the model and create everything
     loader.load('models/snowy-owl.json', function (data) {
-      var meshes = {}, i, head, body, p, light;
+      var meshes = {}, i, j, head, body, p, light;
       var sizeHead, sizeBody;
 
+      console.log(data);
       data.children.forEach(function(mesh) {
         meshes[mesh.name] = mesh;
       });
 
       head = meshes['HullHead'];
       body = meshes['HullBody'];
+
+      head.material.emissiveMap = THREE.ImageUtils.loadTexture('models/emission_head.jpg');
+      body.material.emissiveMap = THREE.ImageUtils.loadTexture('models/emission_body.jpg');
 
       for (i=0; i<owls.length; i++) {
         owls[i].head =  head.clone();
@@ -151,11 +222,11 @@
         owls[i].head.material = head.material.clone();
         owls[i].body.material = body.material.clone();
 
-        owls[i].head.material.emissive = new THREE.Color(0x050505);
-        owls[i].body.material.emissive = new THREE.Color(0x050505);
+        owls[i].head.material.emissive = new THREE.Color(0xFFFFFF);
+        owls[i].body.material.emissive = new THREE.Color(0xFFFFFF);
 
         p = owls[i].head.position.add(owls[i].pos);
-        owls[i].head.position.set(p.x, owlScales[i] * p.y, p.z);
+        //owls[i].head.position.set(p.x, owlScales[i] * p.y, p.z);
         p = owls[i].body.position.add(owls[i].pos);
         owls[i].body.position.set(p.x, p.y, p.z);
 
@@ -165,21 +236,18 @@
         scene.add(owls[i].head);
         scene.add(owls[i].body);
 
-        // point light for body
-        light = new THREE.PointLight( 0xfffeff, .5, 5 );
-        light.name = 'light.body.1-'+i;
-        light.position.set( owls[i].body.position.x+2.0, owls[i].body.position.y, owls[i].body.position.z );
-        scene.add( light );
-
-        // point light for head
-        light = new THREE.PointLight( 0xfffeff, .5, 2 );
-        light.name = 'light.head.'+i;
-        light.position.set( owls[i].head.position.x+2.0, owls[i].head.position.y+1.0, owls[i].head.position.z );
-        //scene.add( light );
 
         sizeHead = new THREE.Box3().setFromObject( owls[i].head).size();
         sizeBody = new THREE.Box3().setFromObject( owls[i].body).size();
         owlSizes[i] = [sizeHead.x + sizeBody.x, sizeHead.y + sizeBody.y, sizeHead.z+sizeBody.z];
+
+        //
+        // point light for head (left eye, right eye, back of head)
+        //
+        // light = new THREE.PointLight( 0xff0000, 0.5);
+        // light.name = 'light.head.eye_left.'+i;
+        // light.position.set( owls[i].head.position.x + sizeHead.x, owls[i].head.position.y + 2*sizeHead.y, owls[i].head.position.z  + sizeHead.z);
+        // scene.add( light );
 
         onWindowResize();
       }
@@ -240,7 +308,7 @@
 
     for (owl = 0; owl<owls.length; owl++) {
       var mesh = scene.getObjectByName('HullHead.'+owl);
-      mesh.rotation.z += ( targetRotations[owl] - mesh.rotation.z ) * 0.05;
+      // mesh.rotation.z += ( targetRotations[owl] - mesh.rotation.z ) * 0.05;
 
       var color = new THREE.Color(targetAmbients[owl], targetAmbients[owl], targetAmbients[owl]);
       mesh.material.emissive = color;
@@ -304,6 +372,8 @@
   }
 
   function onDocumentMouseDown( event ) {
+    var mesh;
+
     event.preventDefault();
     document.addEventListener( 'mousemove', onDocumentMouseMove, false );
     document.addEventListener( 'mouseup', onDocumentMouseUp, false );
@@ -314,9 +384,9 @@
     updateRaycasting();
 
     var owl = getTargetOwl();
-    for (i=0; i<intersects.length; i++) {
-      console.log(intersects[i]);
-    }
+    // for (i=0; i<intersects.length; i++) {
+    //   console.log(intersects[i]);
+    // }
 
     // zoom in on owl if not yet
     if (typeof owl !== 'undefined' && cameraPositionTarget != owlCameras[owl]) {
@@ -331,11 +401,17 @@
 
     tweenCamera(cameraPositionTarget, cameraLookAtTarget);
 
-    targetRotationsStart[owl] = targetRotations[owl];
-    targetAmbientsStart[owl] = targetAmbients[owl];
+    if (typeof owl !== 'undefined') {
+      touchOwl = owl;
+      mesh = scene.getObjectByName('HullHead.'+owl);
+      targetRotationsStart[owl] = mesh.rotation.z; //targetRotations[owl];
+      targetAmbientsStart[owl] = targetAmbients[owl];
+    }
+
   }
 
   function onDocumentMouseMove( event ) {
+    var mesh;
     var owl = getTargetOwl();
 
     mouseX = event.clientX - centerX;
@@ -343,8 +419,10 @@
     pointer.set(( event.clientX / window.innerWidth ) * 2 - 1, - ( event.clientY / window.innerHeight ) * 2 + 1);
     updateRaycasting();
 
-    targetRotations[owl] = clamp(targetRotationsStart[owl] + ( mouseX - mouseXStart ) * 0.01, -Math.PI, 0);
-    targetAmbients[owl] = clamp(targetAmbientsStart[owl] + (mouseYStart - mouseY) * 0.005, 0.0, 1.0);
+    turnHead(touchOwl, clamp(targetRotationsStart[touchOwl] + ( mouseX - mouseXStart ) * 0.01, -Math.PI, 0), 1.0 );
+    // targetRotations[owl] = clamp(targetRotationsStart[owl] + ( mouseX - mouseXStart ) * 0.01, -Math.PI, 0);
+
+    targetAmbients[touchOwl] = clamp(targetAmbientsStart[touchOwl] + (mouseYStart - mouseY) * 0.005, 0.0, 1.0);
   }
 
   function onDocumentMouseUp( event ) {
@@ -360,31 +438,43 @@
   }
 
   function onDocumentTouchStart( event ) {
+    var mesh;
     var owl = 0;
     if ( event.touches.length === 1 ) {
       owl = getTargetOwl();
 
-      // zoom in on owl if not yet
-      if (cameraPositionTarget != owlCameras[owl]) {
-        cameraPositionTarget = owlCameras[owl];
-        console.log('set camTarget=',cameraPositionTarget);
-        cameraLookAtTarget = owlPositions[owl];
+      pointer.set(( event.touches[0].pageX / window.innerWidth ) * 2 - 1, - ( event.touches[0].pageY / window.innerHeight ) * 2 + 1);
+      updateRaycasting();
+
+      var owl = getTargetOwl();
+      for (i=0; i<intersects.length; i++) {
+        // console.log(intersects[i]);
       }
 
+      // zoom in on owl if not yet
+      if (typeof owl !== 'undefined' && cameraPositionTarget != owlCameras[owl]) {
+        cameraPositionTarget = owlCameras[owl].clone();
+        cameraLookAtTarget = owlPositions[owl].clone();
+        cameraLookAtTarget.add(new THREE.Vector3(0, owlSizes[owl][1] / 2, 0));
+      } else
       if (typeof owl === 'undefined') {
         cameraPositionTarget = cameraPositionOverview;
         cameraLookAtTarget = lookAtOverview;
       }
 
+      tweenCamera(cameraPositionTarget, cameraLookAtTarget);
+
       event.preventDefault();
       mouseXStart = event.touches[0].pageX - centerX;
       mouseYStart = event.touches[0].pageY;
 
-      pointer.set(( event.touches[0].pageX / window.innerWidth ) * 2 - 1, - ( event.touches[0].pageY / window.innerHeight ) * 2 + 1);
-      updateRaycasting();
-
-      targetRotationsStart[owl] = targetRotations[owl];
-      targetAmbientsStart[owl] = targetAmbients[owl];
+      if (typeof owl !== 'undefined') {
+        touchOwl = owl;
+        mesh = scene.getObjectByName('HullHead.'+owl);
+        console.log('tocuhowl',touchOwl);
+        targetRotationsStart[owl] = mesh.rotation.z;
+        targetAmbientsStart[owl] = targetAmbients[owl];
+      }
 
     }
   }
@@ -400,7 +490,9 @@
       pointer.set(( event.touches[0].pageX / window.innerWidth ) * 2 - 1, - ( event.touches[0].pageY / window.innerHeight ) * 2 + 1);
       updateRaycasting();
 
-      targetRotations[owl] = clamp(targetRotationsStart[owl] + ( mouseX - mouseXStart ) * 0.01, -Math.PI, 0);
+      turnHead(touchOwl, clamp(targetRotationsStart[touchOwl] + ( mouseX - mouseXStart ) * 0.01, -Math.PI, 0), 1.0 );
+      // targetRotations[owl] = clamp(targetRotationsStart[owl] + ( mouseX - mouseXStart ) * 0.01, -Math.PI, 0);
+
       targetAmbients[owl] = clamp(targetAmbientsStart[owl] + (mouseYStart - mouseY) * 0.005, 0.0, 1.0);
     }
   }

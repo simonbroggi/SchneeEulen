@@ -8,6 +8,7 @@ from time import sleep
 import datetime
 import subprocess
 import cherrypy
+import json
 
 from PodSixNet.Channel import Channel
 from PodSixNet.Server import Server
@@ -16,6 +17,10 @@ from PodSixNet.Server import Server
 from ws4py.server.cherrypyserver import WebSocketPlugin, WebSocketTool
 from ws4py.websocket import WebSocket
 from ws4py.messaging import TextMessage
+from ws4py.websocket import EchoWebSocket
+from ws4py.manager import WebSocketManager
+from ws4py import format_addresses
+from ws4py.client import WebSocketBaseClient
 
 from strategies.base import StrategyThread
 from strategies.master.nightowls import NightOwls
@@ -31,6 +36,8 @@ from strategies.master.idle import Idle
 # logging configuration
 log = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG, format='[%(levelname)s] (%(threadName)-10s) %(message)s')
+wsm = WebSocketManager()
+websocket_support = True
 
 """
 LENZERHEIDE ZAUBERWALD 2015 * SCHNEE-EULEN * Snowy owls (master)
@@ -107,9 +114,15 @@ class SnowlyServer(Server):
         """
         logging.debug('send_command clients=%s params=%s' % (clients, params))
         params['action'] = 'command'
+        if websocket_support:
+            params['clients'] = clients
+            cherrypy.engine.publish('websocket-broadcast', TextMessage(json.dumps(params)))
+            params.pop('clients', None)
+
         for id in clients:
             if id in self.clientsById:
                 self.clientsById[id].Send(params)
+
 
     def register_strategy(self, strategy, weight):
         if not issubclass(strategy, StrategyThread):
@@ -241,6 +254,10 @@ class SnowlyWeb:
     def index(self):
         return open('static/index.html')
 
+    @cherrypy.expose
+    def ws(self):
+        "Method must exist to serve as a exposed hook for the websocket"
+
 class SnowlyWebService:
     exposed = True
 
@@ -310,6 +327,7 @@ class SnowlyWebService:
     @cherrypy.tools.json_out()
     @cherrypy.tools.accept(media='application/json')
     def GET(self, *vpath):
+        logging.error("blablablabla")
         try:
             cmd = vpath[0]
             if cmd == 'clients':
@@ -381,12 +399,53 @@ class SnowlyWebService:
 #        'cherrypy.tools.json_in.on': True
 #    }
 
+class SnowlyWebSocket:
+    @cherrypy.expose
+    def ws(self):
+        # you can access the class instance through
+        #handler = cherrypy.request.ws_handler
+        #logging.info(handler)
+        pass
+
+class SnowlyWebSocketPlugin(WebSocketPlugin):
+    def __init__(self, bus):
+        WebSocketPlugin.__init__(self, bus)
+        self.clients = {}
+
+    def start(self):
+        WebSocketPlugin.start(self)
+        self.bus.subscribe('add', self.add)
+        self.bus.subscribe('get', self.get)
+        self.bus.subscribe('remove', self.remove)
+
+    def stop(self):
+        WebSocketPlugin.stop(self)
+        self.bus.unsubscribe('add', self.add)
+        self.bus.unsubscribe('get', self.get)
+        self.bus.unsubscribe('remove', self.remove)
+
+    def add(self, name, websocket):
+        self.clients[name] = websocket
+        self.broadcast(b"hello guest!", binary=True)
+
+    def get(self, name):
+        return self.clients[name]
+
+    def remove(self, name):
+        del self.clients[name]
+
 class SnowlyWebSocketsHandler(WebSocket):
-    def received_message(self, m):
-        cherrypy.engine.publish('websocket-broadcast', m)
+    def opened(self):
+        logging.debug('>>>>>>>>>> ws.add %s' % (self))
+        cherrypy.engine.publish('add', '', self)
 
     def closed(self, code, reason="A client left the room without a proper explanation."):
+        logging.debug('>>>>>>>>>> ws.remove %s' % (self))
+        cherrypy.engine.publish('remove', self)
         cherrypy.engine.publish('websocket-broadcast', TextMessage(reason))
+
+    def received_message(self, m):
+        cherrypy.engine.publish('websocket-broadcast', m)
 
 if __name__ == '__main__':
     # owl communication network
@@ -402,6 +461,12 @@ if __name__ == '__main__':
 
     # owl control web interface
     logging.debug('=== initializing owl web control interface')
+
+    logging.debug('=== initializing websockets')
+
+    cherrypy.config.update({'server.socket_port': 8081})
+    WebSocketPlugin(cherrypy.engine).subscribe()
+    cherrypy.tools.websocket = WebSocketTool()
 
     api_conf = {
         '/': {
@@ -422,9 +487,11 @@ if __name__ == '__main__':
          },
         '/ws': {
             'tools.websocket.on': True,
-            'tools.websocket.handler_cls': SnowlyWebSocketsHandler
+            'tools.websocket.handler_cls': SnowlyWebSocketsHandler,
+            #'tools.websocket.handler_cls': EchoWebSocket,
         }
     }
+
 
     # disable logging
     cherrypy.config.update({'log.screen': False,
@@ -435,7 +502,6 @@ if __name__ == '__main__':
     #webapp = SnowlyWeb()
     #webapp.snowlcontrol = SnowlyWebService(snowlynet)
 
-    cherrypy.server.socket_port = 8081
     cherrypy.server.socket_host = '0.0.0.0'
 
     if hasattr(cherrypy.engine, 'signal_handler'):
@@ -444,12 +510,8 @@ if __name__ == '__main__':
     cherrypy.tree.mount(SnowlyWeb(), '', web_conf)
     cherrypy.tree.mount(SnowlyWebService(snowlynet), '/api', api_conf)
 
-    logging.debug('=== initializing websockets')
-    WebSocketPlugin(cherrypy.engine).subscribe()
-    cherrypy.tools.websocket = WebSocketTool()
-
     cherrypy.engine.start()
-    #cherrypy.engine.block()
+    ##cherrypy.engine.block()
 
     try:
         while True and snowlynet.is_alive():
