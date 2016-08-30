@@ -39,15 +39,20 @@
   ];
   var owlCameras = [
     new THREE.Vector3(10, 0, 0),
-    new THREE.Vector3(5, 0, -2),
+    new THREE.Vector3(6, 2, -8),
     new THREE.Vector3(10, 4, 0),
     new THREE.Vector3(10, 4, 0),
     new THREE.Vector3(10, 4, 0)
   ];
-  var cameraPositionOverview = new THREE.Vector3(10, 4, 0);
-  var lookAtOverview = new THREE.Vector3(0, 3.2, 0);
+
+  // -z, +y, +x
+  var cameraPositionOverview = new THREE.Vector3(15, 3, 0);
+  var lookAtOverview = new THREE.Vector3(0, 2, -1);
   var cameraPositionTarget = new THREE.Vector3(0, 0, 0);
   var cameraLookAtTarget = new THREE.Vector3(0, 0, 0);
+
+  // look at factor * owlHeight
+  var cameraLookAtHeight = 0.4;
 
   var owlScales = [1.0, 1.0, .33, .33, .33];
   var owlNames = ['MARTHA', 'KLAUS', 'KEVIN','MAJA','LISA'];
@@ -146,7 +151,7 @@
           if (msg.end_val) msg.end_val = +msg.end_val;
           if (msg.start_val) msg.start_val = +msg.start_val;
           if (msg.duration) msg.duration = +msg.duration;
-          if (msg.end_angle) msg.end_angle = +msg.end_angle;
+          if (msg.end_angle) msg.end_angle = -1 * (+msg.end_angle);
 
           console.log(msg);
           externalUpdateHandler(msg);
@@ -252,7 +257,7 @@
     if (newValueRot != submitRotations[owl] || newValueAmbient != submitAmbients[owl]) {
       console.log('send values owl',owl,'rot',(180.0/Math.PI) * newValueRot,'('+newValueRot+')','light',newValueAmbient);
 
-      var deg = (180.0/Math.PI) * newValueRot;
+      var deg = -1 * (180.0/Math.PI) * newValueRot;
       // deg = Math.round(4 * deg) / 4;
       var cmd = 'send/' + owlNames[owl] + '/' + deg + '/' + newValueAmbient;
 
@@ -441,9 +446,11 @@
     var duration = 1000;
     // see http://stackoverflow.com/questions/15696963/three-js-set-and-read-camera-look-vector/15697227#15697227
     var currentLookAt = new THREE.Vector3( 0, 0, -1 ).applyQuaternion( camera.quaternion ).add( camera.position );
+    var currentPos = camera.position.clone();
 
     var camUpdate = function() {
       var v = currentLookAt.clone().add(targetLookAt.clone().sub(currentLookAt).multiplyScalar(this.t));
+      camera.position.copy( currentPos.clone().add(targetPos.clone().sub(currentPos).multiplyScalar(this.t)) );
       camera.lookAt(v);
     };
 
@@ -504,15 +511,13 @@
     updateRaycasting();
 
     var owl = getTargetOwl();
-    // for (i=0; i<intersects.length; i++) {
-    //   console.log(intersects[i]);
-    // }
 
     // zoom in on owl if not yet
     if (typeof owl !== 'undefined' && cameraPositionTarget != owlCameras[owl]) {
       cameraPositionTarget = owlCameras[owl].clone();
+      console.log('cameraPositionTarget',cameraPositionTarget);
       cameraLookAtTarget = owlPositions[owl].clone();
-      cameraLookAtTarget.add(new THREE.Vector3(0, owlSizes[owl][1] / 2, 0));
+      cameraLookAtTarget.add(new THREE.Vector3(0, owlSizes[owl][1] * cameraLookAtHeight, 0));
     } else
     if (typeof owl === 'undefined') {
       cameraPositionTarget = cameraPositionOverview;
@@ -579,7 +584,7 @@
       if (typeof owl !== 'undefined' && cameraPositionTarget != owlCameras[owl]) {
         cameraPositionTarget = owlCameras[owl].clone();
         cameraLookAtTarget = owlPositions[owl].clone();
-        cameraLookAtTarget.add(new THREE.Vector3(0, owlSizes[owl][1] / 2, 0));
+        cameraLookAtTarget.add(new THREE.Vector3(0, owlSizes[owl][1] * cameraLookAtHeight, 0));
       } else
       if (typeof owl === 'undefined') {
         cameraPositionTarget = cameraPositionOverview;
