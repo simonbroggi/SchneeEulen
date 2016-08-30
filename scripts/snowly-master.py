@@ -527,9 +527,9 @@ if __name__ == '__main__':
     cherrypy.config.update({'log.screen': False,
                        'log.access_file': '',
                        'log.error_file': ''})
-    # cherrypy.log.error_log.propagate = False
-    # cherrypy.log.access_log.propagate = False
-    # cherrypy.log.access_file = ''
+    cherrypy.log.error_log.propagate = False
+    cherrypy.log.access_log.propagate = False
+    cherrypy.log.access_file = ''
 
     #webapp = SnowlyWeb()
     #webapp.snowlcontrol = SnowlyWebService(snowlynet)
