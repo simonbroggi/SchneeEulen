@@ -54,7 +54,7 @@ t = threading.Thread(target=servodrive, args=(servos, MAX_ANGLE, 0.0, 4.0, -2))
 t.start()
 t.join()
 
-pi.set_servo_pulsewidth(servos, 0); 
+pi.set_servo_pulsewidth(servos, 0)
 pi.stop()
 
 

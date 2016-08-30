@@ -27,6 +27,8 @@ __exitSignal__ = False
 log = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='[%(levelname)s] (%(threadName)-10s) %(message)s')
 
+SERVO_DEFAULT_MIN_PW = 800
+SERVO_DEFAULT_MAX_PW = 2500
 
 # generic network listener, used for reconnecting
 class SnowlyClient(ConnectionListener):
@@ -86,7 +88,13 @@ class SnowlyClient(ConnectionListener):
             servo_conf = conf.SERVO_CONTROL[key]
             if not 'direction' in servo_conf:
                 servo_conf['direction'] = 'normal'
-            self.servos[key] = servo.Servo(servo_conf['gpio'], 0.0, 180.0, 800, 2500, 50, servo_conf['direction'])
+            if not 'min_pw' in servo_conf:
+                servo_conf['min_pw'] = SERVO_DEFAULT_MIN_PW
+            if not 'max_pw' in servo_conf:
+                servo_conf['max_pw'] = SERVO_DEFAULT_MAX_PW
+            if not 'freq' in servo_conf:
+                servo_conf['freq'] = 50
+            self.servos[key] = servo.Servo(servo_conf['gpio'], 0.0, 180.0, int(servo_conf['min_pw']), int(servo_conf['max_pw']), int(servo_conf['freq']), servo_conf['direction'])
             self.servos[key].start()
 
     def shutdownDimmers(self):
