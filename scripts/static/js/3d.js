@@ -142,7 +142,7 @@
           return;
         }
 
-        console.log(evt.data, evt.data.indexOf('{'));
+        // console.log(evt.data, evt.data.indexOf('{'));
 
         if (evt.data.indexOf('{') === 0) {
           msg = JSON.parse(evt.data);
@@ -153,7 +153,7 @@
           if (msg.duration) msg.duration = +msg.duration;
           if (msg.end_angle) msg.end_angle = -1 * (+msg.end_angle);
 
-          console.log(msg);
+          // console.log(msg);
           externalUpdateHandler(msg);
         } else {
           console.info(evt, evt.data);
@@ -218,12 +218,15 @@
 
         var rad = Math.PI * data['end_angle']/180;
 
+        console.log('-> incoming angle', data['end_angle'], '('+rad+') rad', ' current = ', mesh.rotation.z);
+
         // note: due to the implementation of multi-threading at the cherrypy/ws4py server side, commands
         // may arrive in wrong order! We therefore use a pre-command timestamp to ignore older packets
         if (data.ts <= tsRot) console.error(data);
         if (index !== +touchOwl && data.ts > tsRot) {
           tsRot = data.ts;
-          turnHead(index, rad, data.duration, false );
+
+          turnHead(index, -Math.PI - rad, data.duration, false );
           console.log('[websocket update] rotating ', val,'('+index+')',' to ', data['end_angle'], '('+rad+')', 'in', data.duration,'ts=',data.ts);
 
         }
@@ -257,8 +260,8 @@
     if (newValueRot != submitRotations[owl] || newValueAmbient != submitAmbients[owl]) {
       console.log('send values owl',owl,'rot',(180.0/Math.PI) * newValueRot,'('+newValueRot+')','light',newValueAmbient);
 
-      var deg = -1 * (180.0/Math.PI) * newValueRot;
-      // deg = Math.round(4 * deg) / 4;
+      var deg = 180.0 + (180.0/Math.PI) * newValueRot;
+      console.log('submit angle',deg);
       var cmd = 'send/' + owlNames[owl] + '/' + deg + '/' + newValueAmbient;
 
       submitRotations[i] = newValueRot;
@@ -515,7 +518,7 @@
     // zoom in on owl if not yet
     if (typeof owl !== 'undefined' && cameraPositionTarget != owlCameras[owl]) {
       cameraPositionTarget = owlCameras[owl].clone();
-      console.log('cameraPositionTarget',cameraPositionTarget);
+      // console.log('cameraPositionTarget',cameraPositionTarget);
       cameraLookAtTarget = owlPositions[owl].clone();
       cameraLookAtTarget.add(new THREE.Vector3(0, owlSizes[owl][1] * cameraLookAtHeight, 0));
     } else
