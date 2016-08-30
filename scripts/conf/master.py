@@ -89,3 +89,9 @@ MASTER_PLAYLIST_DESC = [
     'Dunkles Schlafen... für 30s',
     'Dolce far niente - für manuelle Steuerung'
 ]
+
+#
+# test mode (for websockets)
+#
+TEST_MODE = False
+TEST_CLIENTS = ['KLAUS', 'MARTHA']

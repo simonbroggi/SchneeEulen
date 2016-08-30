@@ -3,8 +3,13 @@
 # coding=utf-8
 import time, sys, math
 import threading
-import pigpio
+
 import logging
+try:
+    import pigpio
+except ImportError:
+    logging.info("- no pigpio lib available - fallback to dummy mode")
+
 import Queue
 
 class Dimmer(threading.Thread):

@@ -17,6 +17,10 @@
 # Please see /usr/share/doc/nginx-doc/examples/ for more detailed examples.
 ##
 
+upstream websocket {
+    server 127.0.0.1:8081;
+}
+
 server {
 	#listen   80; ## listen for ipv4; this line is default and implied
 	#listen   [::]:80 default_server ipv6only=on; ## listen for ipv6
@@ -49,13 +53,12 @@ server {
 		# include /etc/nginx/naxsi.rules
 	}
 
-	location /doc/ {
-		alias /usr/share/doc/;
-		autoindex on;
-		allow 127.0.0.1;
-		allow ::1;
-		deny all;
-	}
+    location /ws {
+        proxy_pass http://127.0.0.1:8081/ws;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
 
 	# Only for nginx-naxsi used with nginx-naxsi-ui : process denied requests
 	#location /RequestDenied {

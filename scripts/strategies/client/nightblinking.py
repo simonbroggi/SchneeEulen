@@ -1,7 +1,12 @@
 
 import logging
 import threading
-import pigpio
+
+try:
+    import pigpio
+except ImportError:
+    logging.info("- no pigpio lib available - fallback to dummy mode")
+
 import random
 from time import sleep
 from strategies.base import StrategyThread

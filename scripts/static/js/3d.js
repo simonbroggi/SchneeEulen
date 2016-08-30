@@ -78,6 +78,9 @@
   var touchOwl;
   var owlSizes = [];
 
+  var websocket;
+  var timerId;
+
   container = document.querySelector('.viewport');
 
   WIDTH = window.innerWidth;
@@ -89,41 +92,9 @@
   FAR = 10000;
 
   var sio;
+  var tsRot = -1, tsDimBody = -1;
 
-
-  function updateOwl(data) {
-    var index, mesh, duration, angle, currentLight;
-
-    if (data.action == 'command' && data.command == 'move') {
-      index = owlNames.indexOf(data.name);
-      if (index <= 0) return;
-      
-console.log(index,data.name,owlNames);
-      mesh = scene.getObjectByName('HullHead.'+index);
-      angle = mesh.rotation.z;
-
-      // targetRotations[index] = data['end_angle'];
-      console.log('rotating ',index,' to ', targetRotations[index]);
-
-      turnHead(touchOwl, data['end_angle'], data.duration );
-
-    } else
-    if (data.action == 'command' && data.command == 'dim') {
-
-      // index = owlNames.indexOf(data.name);
-      // currentLight = targetAmbients[index];
-      // targetAmbients[index] = data['end_val'];
-    }
-
-  }
-
-  function turnHead(owl, targetAngle, duration) {
-      var mesh = scene.getObjectByName('HullHead.'+owl);
-      new TWEEN.Tween(mesh.rotation).to({ z: targetAngle }, duration).easing(TWEEN.Easing.Linear.None).start();
-  }
-
-
-  function init() {
+  function initWebsockets() {
     //var websocket;
     //var wsUri = 'ws://' + window.location.host + '/ws';
     //if (window.WebSocket) {
@@ -137,26 +108,183 @@ console.log(index,data.name,owlNames);
     //  return;
     //}
 
-    
-    var websocket = new WebSocket('ws://' + window.location.host + '/ws');
-    websocket.onopen    = function (evt) { console.log("Connected to WebSocket server."); };
-    websocket.onclose   = function (evt) { console.log("Disconnected"); };
-    websocket.onmessage = function (evt) {
+    var onWebsocketOpen = function (evt) {
+      console.log("Connected to WebSocket server.");
+
+      if (timerId) {
+        clearInterval(timerId);
+        timerId = undefined;
+      }
+    };
+
+    var onWebsocketClose = function (evt) {
+      console.log("Websocket disconnected");
+      websocket = undefined;
+
+      reconnect();
+    };
+
+    var onWebsocketMessage = function (evt) {
       var msg;
+
+      // parse message
       try {
-        msg = JSON.parse(evt.data);
-        updateOwl(msg);
+        if (typeof evt.data !== 'undefined') {
+          evt.data.replace(/NaN/g,/\"NaN\"/);
+        }
+
+        if (evt.data === '') {
+          return;
+        }
+
+        console.log(evt.data, evt.data.indexOf('{'));
+
+        if (evt.data.indexOf('{') === 0) {
+          msg = JSON.parse(evt.data);
+
+          // ensure consistency / prepare numbers
+          if (msg.end_val) msg.end_val = +msg.end_val;
+          if (msg.start_val) msg.start_val = +msg.start_val;
+          if (msg.duration) msg.duration = +msg.duration;
+          if (msg.end_angle) msg.end_angle = +msg.end_angle;
+
+          console.log(msg);
+          externalUpdateHandler(msg);
+        } else {
+          console.info(evt, evt.data);
+        }
+
       } catch (e) {
         console.error(e);
       }
     };
-    websocket.onerror   = function (evt) { console.log('Error occured: ' + evt.data); };
 
+    var onWebsocketError = function (evt) {
+      console.error('Websocket error occured: ', evt.data, timerId);
+      websocket = undefined;
+    };
+
+    var reconnect = function() {
+      console.log('reconnect timer',timerId,'websocket',websocket);
+      if (!websocket) {
+        try {
+          websocket = new WebSocket('ws://' + window.location.host + '/ws');
+          websocket.onclose = onWebsocketClose;
+          websocket.onopen = onWebsocketOpen;
+          websocket.onmessage = onWebsocketMessage;
+          websocket.onerror = onWebsocketError;
+
+          console.log('created new websocket',websocket);
+        } catch (e) {
+          console.error(e);
+          websocket = undefined;
+        }
+      }
+
+      if (!websocket) {
+        console.log('no websocket',websocket);
+        if (timerId) {
+          clearInterval(timerId);
+          timerId = undefined;
+        }
+        timerId = setInterval(this, 3000);
+      }
+    };
+
+    // init websockets on page load
+    reconnect();
+  }
+
+  /**
+   * Update owl state (rotation, lighting)
+   * @param data
+   */
+  function externalUpdateHandler(data) {
+    var index, mesh, duration, angle, currentLight;
+
+    if (typeof data === 'undefined') return;
+
+    if (data.action == 'command' && data.command == 'move') {
+      data.clients.forEach(function(val, index) {
+        index = owlNames.indexOf(val);
+
+        mesh = scene.getObjectByName('HullHead.'+index);
+        angle = mesh.rotation.z;
+
+        var rad = Math.PI * data['end_angle']/180;
+
+        // note: due to the implementation of multi-threading at the cherrypy/ws4py server side, commands
+        // may arrive in wrong order! We therefore use a pre-command timestamp to ignore older packets
+        if (data.ts <= tsRot) console.error(data);
+        if (index !== +touchOwl && data.ts > tsRot) {
+          tsRot = data.ts;
+          turnHead(index, rad, data.duration, false );
+          console.log('[websocket update] rotating ', val,'('+index+')',' to ', data['end_angle'], '('+rad+')', 'in', data.duration,'ts=',data.ts);
+
+        }
+      });
+    } else
+    if (data.action == 'command' && data.command == 'dim') {
+      data.clients.forEach(function(val, index) {
+        index = owlNames.indexOf(val);
+
+        if (data.id == 'body' && index !== +touchOwl && data.ts > tsDimBody) {
+          tsDimBody = data.ts;
+          currentLight = targetAmbients[index];
+          console.log('[websocket update] dim ', val,'('+index+'):', data.id,' to ', data['end_val'], 'in', data.duration,'ts=',data.ts);
+          targetAmbients[index] = data['end_val'];
+        }
+      })
+    }
+  }
+
+  function turnHead(owl, targetAngle, duration, send) {
+    var mesh = scene.getObjectByName('HullHead.'+owl);
+    new TWEEN.Tween(mesh.rotation).to({ z: targetAngle }, duration).easing(TWEEN.Easing.Linear.None).start();
+
+    if (send) {
+      submitValuesThrottled(owl, targetAngle, targetAmbients[owl])
+    }
+  }
+
+
+  function submitValues(owl, newValueRot, newValueAmbient) {
+    if (newValueRot != submitRotations[owl] || newValueAmbient != submitAmbients[owl]) {
+      console.log('send values owl',owl,'rot',(180.0/Math.PI) * newValueRot,'('+newValueRot+')','light',newValueAmbient);
+
+      var deg = (180.0/Math.PI) * newValueRot;
+      // deg = Math.round(4 * deg) / 4;
+      var cmd = 'send/' + owlNames[owl] + '/' + deg + '/' + newValueAmbient;
+
+      submitRotations[i] = newValueRot;
+      submitAmbients[i] = newValueAmbient;
+
+      //console.log('throttled');
+      $.ajax({
+        type: 'POST',
+        url: '/api/' + cmd,
+        data: '{}',
+        success: function(data) {},
+        contentType: "application/json",
+        dataType: 'json'
+      });
+
+    }
+  }
+
+
+  /**
+   * Init 3d owl interface.
+   */
+  function init() {
+
+    initWebsockets();
 
     scene = new THREE.Scene();
     renderer = new THREE.WebGLRenderer({
       antialias: true
     });
+    scene.background = new THREE.Color( 0x000000 );
     renderer.setSize(WIDTH, HEIGHT);
 
     // not supported on mobile devices
@@ -198,11 +326,10 @@ console.log(index,data.name,owlNames);
     loader = new THREE.ObjectLoader();
 
     // load the model and create everything
-    loader.load('models/snowy-owl.json', function (data) {
+    loader.load('models/snowy-owl-improved.json', function (data) {
       var meshes = {}, i, j, head, body, p, light;
       var sizeHead, sizeBody;
 
-      console.log(data);
       data.children.forEach(function(mesh) {
         meshes[mesh.name] = mesh;
       });
@@ -272,34 +399,18 @@ console.log(index,data.name,owlNames);
     document.addEventListener( 'mousedown', onDocumentMouseDown, false );
     document.addEventListener( 'touchstart', onDocumentTouchStart, false );
     document.addEventListener( 'touchmove', onDocumentTouchMove, false );
+    document.addEventListener('touchend', onDocumentTouchEnd, false);
   }
 
-  function submitValues(owl, newValueRot, newValueAmbient) {
-    if (newValueRot != submitRotations[i] || newValueAmbient != submitAmbients[i]) {
-      //console.log('submit rotations',i,newValueRot);
-      var deg = (180.0/Math.PI) * newValueRot;
-      var cmd = 'send/' + selectedOwl + '/' + deg + '/' + newValueAmbient;
-
-      submitRotations[i] = newValueRot;
-      submitAmbients[i] = newValueAmbient;
-
-      //console.log('throttled');
-      $.ajax({
-        type: 'POST',
-        url: '/api/' + cmd,
-        data: '{}',
-        success: function(data) {},
-        contentType: "application/json",
-        dataType: 'json'
-      });
-
-    }
-  }
 
   function clamp(x, a, b) {
     return Math.max(a, Math.min(x, b));
   }
 
+  /**
+   * Global render loop
+   * @param time
+   */
   function render(time) {
     var i, owl;
     //var owl = getTargetOwl();
@@ -314,14 +425,17 @@ console.log(index,data.name,owlNames);
       mesh.material.emissive = color;
       mesh = scene.getObjectByName('HullBody.'+owl);
       mesh.material.emissive = color;
-
-      submitValuesThrottled(owl, targetRotations[owl], targetAmbients[owl])
     }
 
     renderer.render(scene, camera);
     requestAnimationFrame(render);
   }
 
+  /**
+   * Focus on one owl, using camera tweening
+   * @param targetPos
+   * @param targetLookAt
+     */
   function tweenCamera(targetPos, targetLookAt) {
 
     var duration = 1000;
@@ -339,11 +453,13 @@ console.log(index,data.name,owlNames);
     new TWEEN.Tween(prop).to({ t: 1.0 }, duration).easing(TWEEN.Easing.Cubic.InOut).onUpdate(camUpdate).start();
   }
 
+
   function updateRaycasting() {
     // update raycast
     raycaster.setFromCamera(pointer, camera);
     intersects = raycaster.intersectObjects( scene.children );
   }
+
 
   function onWindowResize() {
     centerX = window.innerWidth / 2;
@@ -353,6 +469,10 @@ console.log(index,data.name,owlNames);
     renderer.setSize( window.innerWidth, window.innerHeight );
   }
 
+  /**
+   * Returns the first owl matching the raycast intersects.
+   * @returns {*}
+     */
   function getTargetOwl() {
     var i;
     var d = Number.POSITIVE_INFINITY;
@@ -367,9 +487,9 @@ console.log(index,data.name,owlNames);
       }
     }
 
-    //console.log(target);
     return target;
   }
+
 
   function onDocumentMouseDown( event ) {
     var mesh;
@@ -406,6 +526,8 @@ console.log(index,data.name,owlNames);
       mesh = scene.getObjectByName('HullHead.'+owl);
       targetRotationsStart[owl] = mesh.rotation.z; //targetRotations[owl];
       targetAmbientsStart[owl] = targetAmbients[owl];
+    } else {
+      touchOwl = undefined;
     }
 
   }
@@ -419,7 +541,7 @@ console.log(index,data.name,owlNames);
     pointer.set(( event.clientX / window.innerWidth ) * 2 - 1, - ( event.clientY / window.innerHeight ) * 2 + 1);
     updateRaycasting();
 
-    turnHead(touchOwl, clamp(targetRotationsStart[touchOwl] + ( mouseX - mouseXStart ) * 0.01, -Math.PI, 0), 1.0 );
+    turnHead(touchOwl, clamp(targetRotationsStart[touchOwl] + ( mouseX - mouseXStart ) * 0.01, -Math.PI, 0), 1.0, true );
     // targetRotations[owl] = clamp(targetRotationsStart[owl] + ( mouseX - mouseXStart ) * 0.01, -Math.PI, 0);
 
     targetAmbients[touchOwl] = clamp(targetAmbientsStart[touchOwl] + (mouseYStart - mouseY) * 0.005, 0.0, 1.0);
@@ -429,12 +551,14 @@ console.log(index,data.name,owlNames);
     document.removeEventListener( 'mousemove', onDocumentMouseMove, false );
     document.removeEventListener( 'mouseup', onDocumentMouseUp, false );
     document.removeEventListener( 'mouseout', onDocumentMouseOut, false );
+    touchOwl = undefined;
   }
 
   function onDocumentMouseOut( event ) {
     document.removeEventListener( 'mousemove', onDocumentMouseMove, false );
     document.removeEventListener( 'mouseup', onDocumentMouseUp, false );
     document.removeEventListener( 'mouseout', onDocumentMouseOut, false );
+    touchOwl = undefined;
   }
 
   function onDocumentTouchStart( event ) {
@@ -471,9 +595,10 @@ console.log(index,data.name,owlNames);
       if (typeof owl !== 'undefined') {
         touchOwl = owl;
         mesh = scene.getObjectByName('HullHead.'+owl);
-        console.log('tocuhowl',touchOwl);
         targetRotationsStart[owl] = mesh.rotation.z;
         targetAmbientsStart[owl] = targetAmbients[owl];
+      } else {
+        touchOwl = undefined;
       }
 
     }
@@ -490,11 +615,15 @@ console.log(index,data.name,owlNames);
       pointer.set(( event.touches[0].pageX / window.innerWidth ) * 2 - 1, - ( event.touches[0].pageY / window.innerHeight ) * 2 + 1);
       updateRaycasting();
 
-      turnHead(touchOwl, clamp(targetRotationsStart[touchOwl] + ( mouseX - mouseXStart ) * 0.01, -Math.PI, 0), 1.0 );
+      turnHead(touchOwl, clamp(targetRotationsStart[touchOwl] + ( mouseX - mouseXStart ) * 0.01, -Math.PI, 0), 1.0, true );
       // targetRotations[owl] = clamp(targetRotationsStart[owl] + ( mouseX - mouseXStart ) * 0.01, -Math.PI, 0);
 
       targetAmbients[owl] = clamp(targetAmbientsStart[owl] + (mouseYStart - mouseY) * 0.005, 0.0, 1.0);
     }
+  }
+
+  function onDocumentTouchEnd(event) {
+    touchOwl = undefined;
   }
 
   init();

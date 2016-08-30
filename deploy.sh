@@ -1,7 +1,8 @@
 if [ $# -eq 1 ]
   then
     echo Deploying scripts to host $1
-    rsync --progress -avz --exclude '.git' --exclude '.DS_Store'--exclude 'system' --exclude '.idea' --exclude '*.pyc' --exclude 'libs/cherrypy/build' --exclude 'CherryPy.egg*' --exclude '.CherryPy*' --exclude 'cherrypy/dist' --exclude 'libs' \
+    rsync --progress -avz --exclude '.git' --exclude '.DS_Store'--exclude 'system' --exclude '.idea' --exclude '*.pyc' --exclude 'libs/cherrypy/build' --exclude 'CherryPy.egg*' --exclude '.CherryPy*' \
+        --exclude 'cherrypy/dist' --exclude 'libs/pigpio' \
         -e "ssh -A -t pi@$1" . :/home/pi/schnee-eulen
 fi
 
