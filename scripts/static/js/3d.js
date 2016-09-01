@@ -379,6 +379,9 @@
         p = owls[i].body.position.add(owls[i].pos);
         owls[i].body.position.set(p.x, p.y, p.z);
 
+        // initial head rotation: 90°
+        owls[i].head.rotateZ(-Math.PI/2);
+
         owls[i].head.name = 'HullHead.'+i;
         owls[i].body.name = 'HullBody.'+i;
 
@@ -443,17 +446,21 @@
     document.getElementById('back').className = 'button-back';
     document.querySelector('.instructions-overview').className = 'instructions-overview';
     document.querySelector('.instructions-owl').className = 'instructions-owl invisible';
+    document.querySelector('h1').className = 'title';
   }
 
   function setUIFocus(owl) {
     document.getElementById('back').className = 'button-back owl';
     document.querySelector('.instructions-overview').className = 'instructions-overview invisible';
     document.querySelector('.instructions-owl').className = 'instructions-owl';
+    //document.querySelector('h1').className = 'invisible';
+
   }
 
   function hideUIInstructions() {
     document.querySelector('.instructions-owl').className = 'instructions-owl invisible';
     document.querySelector('.instructions-overview').className = 'instructions-overview invisible';
+    document.querySelector('h1').className = 'title invisible';
   }
 
   function clamp(x, a, b) {
@@ -645,6 +652,8 @@
         cameraTarget = cameraOverview;
         setUIOverview();
       }
+
+      tweenCamera(cameraTarget);
 
       event.preventDefault();
       mouseXStart = event.touches[0].pageX - centerX;
