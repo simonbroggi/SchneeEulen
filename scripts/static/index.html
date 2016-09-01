@@ -3,100 +3,47 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
-    <title>Snowy Owls * Lenzerheide Zauberwald 2015</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>Snowy Owls * 3D control</title>
 
-    <!-- Bootstrap -->
-    <link href="static/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" media="screen" href="static/css/styles.css" />
+    <script type="text/javascript" src="static/js/jquery-2.1.4.min.js"></script>
+	<script type="text/javascript" src="static/js/three.min.js"></script>
   </head>
-  <style>
-    html {
-      height: 100%;
-    }
-    body {
-      background: #000 url('/static/images/owlbg.jpg') center center no-repeat;
-      background-size: auto 100%;
-      color: #fff;
-      font: 1.5em/1.4 Helvetica,Arial,sans-serif;
-      text-shadow: 1px 1px 1px #000;
-      text-align: center;
 
-    }
-    h1 {
-      font-weight: bold;
-      margin-bottom: 50vh;
-    }
-    p {
-      margin-bottom: 1em;
-      font-weight: bold;
-    }
-    .intro {
-      font-weight: bold;
-    }
-    .btn {
-      font-weight: bold;
-      margin-bottom: 0.25em;
-    }
-    .refresh {
-      background-color: #eee;
-      color: #000;
-      margin-bottom: 1em;
-    }
-    .refresh:active,
-    .refresh:focus {
-      background-color: darkred;
-    }
-    .btn-default:active,
-    .btn-default.active:hover,
-    .btn.active:focus {
-      background-color: darkred;
-      color: white;
-    }
-    .btn-default.active {
-      background-color: green;
-      color: white;
-      border: 1px solid darkgreen;
-    }
-    .list {
-      margin-top: 1.5em;
-    }
-    button.active {
-      background-color: lightgreen;
-    }
-    body {
-      padding: 0.5em;
-    }
-    a {
-      text-shadow: none;
-    }
-
-  </style>
   <body>
+    <button class="button-back" id="back"></button>
 
-  <div class="container-fluid">
-    <h1>Snowy Owls</h1>
+	<div class="viewport">
+		<div class="tooltip ambient">Slide for<br/>lighting</div>
+		<div class="tooltip rotation">Slide for<br/>rotation</div>
 
-    <p class="intro">Willkommen bei den Schnee-Eulen. Hier kannst du ihnen einflüstern, was sie machen sollen. Bitte jeweils etwas Geduld, es dauert ein paar Sekunden bis sie sich anpassen.</p>
-    <button class="btn btn-default col-xs-12 refresh"><span class="glyphicon glyphicon-refresh"></span> Ansicht aktualisieren</button>
+        <h1 class="title">
+            <span class="invisible">Snowy Owls</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="1188" height="146.4" viewBox="0 0 1188 146.4"><title>snowy-owls-logo</title><path d="M90.6,25.1,81.1,37.2c-7.3-5.8-18.6-9.9-30.7-9.9-19.2,0-26.8,11-26.8,21.4a22.1,22.1,0,0,0,8.6,17.1C37.4,70,45.8,72.6,53,74.7c9.5,2.8,20.1,5.8,29.2,13.6,7.6,6.5,14.3,17.5,14.3,30,0,19.7-14.9,40.2-46,40.2-16,0-32-5.2-44.1-15.6l10.1-11.7c9.3,8.2,21.8,12.1,33.9,12.1,21.6,0,30-13.4,30-25.1,0-6.7-3.5-14.3-9.5-19.2S56.2,91.6,46.3,88.6c-8-2.4-16.4-4.8-25.3-12.1C13.7,70.4,7.6,60.1,7.6,49c0-20.5,16-36.9,42.8-36.9C65.7,12.1,80.2,17.1,90.6,25.1Z" transform="translate(-6.3 -12.1)" style="fill:#fff"/><path d="M200.5,25.9c11.2,12.7,11.2,28.3,11.2,47.7v83.6h-16V73.7c0-17.5,0-29.6-7.3-37.8-5.2-5.8-13-8.6-21.4-8.6s-16.2,2.8-21.4,8.6c-7.3,8.2-7.3,20.3-7.3,37.8v83.6h-16V73.7c0-19.4,0-35,11.2-47.7,7.8-8.9,20.1-13.8,33.5-13.8S192.7,17.1,200.5,25.9Z" transform="translate(-6.3 -12.1)" style="fill:#fff"/><path d="M248.6,33.5c8-13.2,23.1-21.4,41.3-21.4s33.3,8.2,41.3,21.4,7.8,26.4,7.8,51.8,0,39.1-7.8,51.8-23.1,21.4-41.3,21.4-33.3-8.2-41.3-21.4-7.8-26.3-7.8-51.8S240.8,46.2,248.6,33.5Zm13.8,96.1c5.2,8.6,15.3,13.8,27.4,13.8s22.2-5.2,27.4-13.8,5.6-22.2,5.6-44.3,0-35-5.6-44.3S302,27.2,289.9,27.2s-22.2,5.2-27.4,13.8-5.6,22.2-5.6,44.3S256.8,120.3,262.4,129.6Z" transform="translate(-6.3 -12.1)" style="fill:#fff"/><path d="M384,13.4v89.8c0,16.4,0,25.5,6,32.8,3.9,4.8,10.4,7.3,17.9,7.3s14-2.6,17.9-7.3c6-7.3,6-16.4,6-32.8V13.4h16v89.8c0,16.4,0,25.5,6,32.8,3.9,4.8,10.4,7.3,17.9,7.3s14-2.6,17.9-7.3c6-7.3,6-16.4,6-32.8V13.4h16v89.8c0,17.5,0,32-10.6,43.4-6.9,7.3-16.8,11.9-29.4,11.9-14.2,0-25.3-5.7-32-17.2-6.7,11.2-17.8,17.2-32,17.2-12.5,0-22.5-4.5-29.4-11.9C368,135.2,368,120.7,368,103.3V13.4Z" transform="translate(-6.3 -12.1)" style="fill:#fff"/><path d="M585.5,75c1.5-1.5,3-3.9,8.6-15.3l21.2-46.2h17.5L608,65.9c-7.8,15.6-10.2,20.9-17.9,24.6v66.7h-16V90.5c-7.8-3.7-10.2-9.1-17.9-24.6L531.3,13.4h17.5L570,59.6c5.6,11.4,7.1,13.8,8.6,15.3a4.7,4.7,0,0,0,6.9,0Z" transform="translate(-6.3 -12.1)" style="fill:#fff"/><path d="M712.9,33.5c8-13.2,23.1-21.4,41.3-21.4s33.3,8.2,41.3,21.4,7.8,26.4,7.8,51.8,0,39.1-7.8,51.8-23.1,21.4-41.3,21.4-33.3-8.2-41.3-21.4-7.8-26.3-7.8-51.8S705.2,46.2,712.9,33.5Zm13.8,96.1c5.2,8.6,15.3,13.8,27.4,13.8s22.2-5.2,27.4-13.8,5.6-22.2,5.6-44.3,0-35-5.6-44.3-15.3-13.8-27.4-13.8-22.2,5.2-27.4,13.8-5.6,22.2-5.6,44.3S721.1,120.3,726.7,129.6Z" transform="translate(-6.3 -12.1)" style="fill:#fff"/><path d="M848.3,13.4v89.8c0,16.4,0,25.5,6,32.8,3.9,4.8,10.4,7.3,17.9,7.3s14-2.6,17.9-7.3c6-7.3,6-16.4,6-32.8V13.4h16v89.8c0,16.4,0,25.5,6,32.8,3.9,4.8,10.4,7.3,17.9,7.3s14-2.6,17.9-7.3c6-7.3,6-16.4,6-32.8V13.4h16v89.8c0,17.5,0,32-10.6,43.4-6.9,7.3-16.8,11.9-29.4,11.9-14.2,0-25.3-5.7-32-17.2-6.7,11.2-17.8,17.2-32,17.2-12.5,0-22.5-4.5-29.4-11.9-10.6-11.4-10.6-25.9-10.6-43.4V13.4Z" transform="translate(-6.3 -12.1)" style="fill:#fff"/><path d="M1023.5,13.4V123.8c0,8.9,0,13.6,3.7,16.4s6.3,1.9,14.3,1.9h41.7v15.1h-41.7c-9.5,0-18.1,0-25.3-6-8.6-7.6-8.6-17.1-8.6-27.4V13.4Z" transform="translate(-6.3 -12.1)" style="fill:#fff"/><path d="M1188.5,25.1,1179,37.2c-7.3-5.8-18.6-9.9-30.7-9.9-19.2,0-26.8,11-26.8,21.4a22.1,22.1,0,0,0,8.6,17.1c5.2,4.3,13.6,6.9,20.7,9.1,9.5,2.8,20.1,5.8,29.2,13.6,7.6,6.5,14.3,17.5,14.3,30,0,19.7-14.9,40.2-46,40.2-16,0-32-5.2-44.1-15.6l10.2-11.7c9.3,8.2,21.8,12.1,33.9,12.1,21.6,0,30-13.4,30-25.1,0-6.7-3.5-14.3-9.5-19.2s-14.7-7.6-24.6-10.6c-8-2.4-16.4-4.8-25.3-12.1-7.3-6-13.4-16.4-13.4-27.4,0-20.5,16-36.9,42.8-36.9C1163.6,12.1,1178.1,17.1,1188.5,25.1Z" transform="translate(-6.3 -12.1)" style="fill:#fff"/></svg>
+        </h1>
+	</div>
 
-    <div class="row list">
-      <div class="master-strategies">
-      </div>
+    <div class="instructions" id="instructions">
+        <div class="instructions-overview">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 544.2 792"><path d="M310,710.4c-100.6,0-182.3-81.8-182.3-182.3v-171A54.2,54.2,0,0,1,181.8,303a55.1,55.1,0,0,1,20,3.8l10.3,4,2.9-10.7a54.2,54.2,0,0,1,52.2-39.9,55,55,0,0,1,20,3.8l10.3,4,2.9-10.7a54.3,54.3,0,0,1,70.3-36.8l13.3,4.7V143.5a54.1,54.1,0,1,1,108.3,0V421.3l51.1-34a86.9,86.9,0,0,1,117.6,20.2,54.2,54.2,0,0,1-3.4,69.1L484.8,665.2a140.3,140.3,0,0,1-103,45.2ZM181.8,325.8a31.4,31.4,0,0,0-31.3,31.3v171c0,88,71.6,159.5,159.6,159.5h71.8A117,117,0,0,0,468,649.7L640.9,461a31.3,31.3,0,0,0,2-40,64.1,64.1,0,0,0-86.7-14.9l-68.8,45.9a11.4,11.4,0,0,1-17.7-9.4V143.5a31.3,31.3,0,1,0-62.7,0v235a11.4,11.4,0,1,1-22.8,0V271.7a31.3,31.3,0,0,0-62.7,0V378.5a11.4,11.4,0,1,1-22.8,0V314.4a31.3,31.3,0,0,0-62.7,0v64.1a11.4,11.4,0,1,1-22.8,0V357.1A31.4,31.4,0,0,0,181.8,325.8Z" transform="translate(-127.7 -3.9)" style="fill:#fff"/><path d="M481,795.9a11.4,11.4,0,0,1-11.4-11.4V710.4H193.2v74.1a11.4,11.4,0,1,1-22.8,0V699a11.4,11.4,0,0,1,11.4-11.4H481A11.4,11.4,0,0,1,492.4,699v85.5A11.4,11.4,0,0,1,481,795.9Z" transform="translate(-127.7 -3.9)" style="fill:#fff"/><path d="M566.5,154.9a11.4,11.4,0,0,1-11.4-11.4,116.8,116.8,0,1,0-233.6,0,11.4,11.4,0,1,1-22.8,0c0-77,62.6-139.6,139.6-139.6S577.8,66.5,577.8,143.5A11.4,11.4,0,0,1,566.5,154.9Z" transform="translate(-127.7 -3.9)" style="fill:#fff"/></svg>
+            <span>Select owl</span>
+        </div>
+
+        <div class="instructions-owl hidden">
+            <div class="box">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 479.6 620.2"><title>Unbenannt-7</title><path d="M328.2,121.1a9.7,9.7,0,0,1-8.1-15.1,9.6,9.6,0,0,1,6.2-4.1c46.7-9.6,68-24.4,68-34,0-17.4-62.5-42.6-160.3-42.6S73.5,50.5,73.5,67.9c0,9.7,21.3,24.4,68,34a9.7,9.7,0,0,1-2,19.2l-1.9-.2C83.7,109.9,54.1,91,54.1,67.9c0-40.1,90.5-61.1,179.8-61.1s179.8,21,179.8,61.1c0,23.1-29.7,42-83.5,53.1Z" transform="translate(-38.7 -6.8)" style="fill:#fff"/><path d="M103,156.1a9.7,9.7,0,0,1-6.7-16.8l32.5-31.1-9.1-38.1a9.7,9.7,0,0,1,1.2-7.3,9.6,9.6,0,0,1,6-4.3l2.3-.3a9.7,9.7,0,0,1,9.4,7.5L149,109.2a9.7,9.7,0,0,1-2.7,9.3l-36.5,35A9.5,9.5,0,0,1,103,156.1Z" transform="translate(-38.7 -6.8)" style="fill:#fff"/><path d="M316.5,627.1a113.7,113.7,0,0,1-80.9-33.5L49.2,407.2a35.9,35.9,0,0,1,0-50.8,65.3,65.3,0,0,1,84.8-6l50.8,38.1V159.5a49,49,0,1,1,98,0v91.4l5-2.9a48.9,48.9,0,0,1,70.7,26.2l1.4,4.1,3.6-2.4a49,49,0,0,1,73.5,24.5l1.4,4.1,3.6-2.4a49,49,0,0,1,76.2,40.7V486.5A140.7,140.7,0,0,1,377.8,627.1ZM95.2,357A45.3,45.3,0,0,0,63,370.2a16.5,16.5,0,0,0,0,23.2L249.3,579.8a94.4,94.4,0,0,0,67.2,27.8h61.3A121.2,121.2,0,0,0,498.9,486.5V342.6a29.5,29.5,0,0,0-59,0v13.1a9.7,9.7,0,1,1-19.5,0V316.4a29.5,29.5,0,1,0-59,0v39.2a9.7,9.7,0,0,1-19.5,0V290.3a29.5,29.5,0,0,0-59,0v65.4a9.7,9.7,0,0,1-19.5,0V159.5a29.5,29.5,0,1,0-59,0V408a9.7,9.7,0,0,1-5.4,8.7,9.9,9.9,0,0,1-4.4,1,9.5,9.5,0,0,1-5.8-1.9L122.4,366A45.1,45.1,0,0,0,95.2,357Z" transform="translate(-38.7 -6.8)" style="fill:#fff"/></svg>
+                <span>Head</span>
+            </div>
+
+            <div class="box">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 526.7 623.9"><title>Unbenannt-7</title><path d="M80.4,206.8a10,10,0,0,1-7.1-2.8L18,148.8a10.5,10.5,0,0,1,14.9-14.9l37,37V40.5l-37,37A10.5,10.5,0,0,1,18,62.7l55-55a13.5,13.5,0,0,1,3.4-2.3,10.5,10.5,0,0,1,8.1,0l.9.6,1.8,1.2,55.7,55.4a10.6,10.6,0,0,1,0,14.9,10.5,10.5,0,0,1-14.9,0l-37-37V170.9l37-37a10.5,10.5,0,0,1,18,7.4,10.6,10.6,0,0,1-3.1,7.5l-55,55-1.7,1L84.4,206a10.5,10.5,0,0,1-4,.8Z" transform="translate(-14.9 -4.6)" style="fill:#fff"/><path d="M329.2,628.6a119.7,119.7,0,0,1-85.2-35.3L48.2,397.5a38.1,38.1,0,0,1,0-53.7,68.9,68.9,0,0,1,89.5-6.4l52.9,39.7V137a51.8,51.8,0,1,1,103.5,0v95.5l4.8-2.8a51.7,51.7,0,0,1,74.7,27.7l1.4,3.9,3.5-2.3a51.8,51.8,0,0,1,77.6,25.9l1.4,3.9,3.5-2.3a51.7,51.7,0,0,1,80.5,43V480.6c0,81.6-66.4,148-148,148ZM96.7,344.8a47.3,47.3,0,0,0-33.6,13.8,17,17,0,0,0,0,24L258.8,578.4a98.8,98.8,0,0,0,70.3,29.1h64.4A127.1,127.1,0,0,0,520.5,480.6V329.4a30.7,30.7,0,1,0-61.4,0v13.7a10.5,10.5,0,1,1-21,0V301.9a30.7,30.7,0,1,0-61.4,0v41.2a10.5,10.5,0,1,1-21.1,0V274.4a30.7,30.7,0,1,0-61.4,0v68.7a10.5,10.5,0,1,1-21,0V137a30.7,30.7,0,1,0-61.4,0V398.1a10.5,10.5,0,0,1-10.5,10.5,10.6,10.6,0,0,1-6.3-2.1l-69.7-52.3A46.9,46.9,0,0,0,96.7,344.8Z" transform="translate(-14.9 -4.6)" style="fill:#fff"/></svg>
+                <span>Light</span>
+            </div>
+        </div>
     </div>
 
-    <p class="direct">
-      <a class="btn btn-default" href="static/direct.html#KLAUS">Direct KLAUS</a>
-      <a class="btn btn-default"  href="static/direct.html#MARTHA">Direct MARTHA</a>
-      <a class="btn btn-default"  href="static/direct.html#KEVIN">Direct KEVIN</a>
-      <a class="btn btn-default"  href="static/direct.html#LISA">Direct LISA</a>
-      <a class="btn btn-default"  href="static/direct.html#MAJA">Direct MAJA</a>
-    </p>
-
-    <script src="static/js/jquery-2.1.4.min.js"></script>
-    <script src="static/js/bootstrap.min.js"></script>
-    <script src="static/js/snowly.js"></script>
-  </div>
-
+    <script src="static/js/tween.min.js"></script>
+	<script type="text/javascript" src="static/js/3d.js"></script>
   </body>
 </html>

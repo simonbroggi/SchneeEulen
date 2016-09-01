@@ -348,7 +348,7 @@
     loader = new THREE.ObjectLoader();
 
     // load the model and create everything
-    loader.load('models/snowy-owl-improved.json', function (data) {
+    loader.load('static/models/snowy-owl-improved.json', function (data) {
       var meshes = {}, i, j, head, body, p, light;
       var sizeHead, sizeBody;
 
@@ -359,8 +359,8 @@
       head = meshes['HullHead'];
       body = meshes['HullBody'];
 
-      head.material.emissiveMap = THREE.ImageUtils.loadTexture('models/emission_head.jpg');
-      body.material.emissiveMap = THREE.ImageUtils.loadTexture('models/emission_body.jpg');
+      head.material.emissiveMap = THREE.ImageUtils.loadTexture('static/models/emission_head.jpg');
+      body.material.emissiveMap = THREE.ImageUtils.loadTexture('static/models/emission_body.jpg');
 
       for (i=0; i<owls.length; i++) {
         owls[i].head =  head.clone();
@@ -428,8 +428,33 @@
     document.addEventListener( 'touchstart', onDocumentTouchStart, false );
     document.addEventListener( 'touchmove', onDocumentTouchMove, false );
     document.addEventListener('touchend', onDocumentTouchEnd, false);
+
+    document.getElementById('back').addEventListener('click', onBackButtonClick);
   }
 
+  function onBackButtonClick() {
+    console.log('tweening',this);
+
+    tweenCamera(cameraOverview);
+    this.className = 'button-back';
+  }
+
+  function setUIOverview() {
+    document.getElementById('back').className = 'button-back';
+    document.querySelector('.instructions-overview').className = 'instructions-overview';
+    document.querySelector('.instructions-owl').className = 'instructions-owl invisible';
+  }
+
+  function setUIFocus(owl) {
+    document.getElementById('back').className = 'button-back owl';
+    document.querySelector('.instructions-overview').className = 'instructions-overview invisible';
+    document.querySelector('.instructions-owl').className = 'instructions-owl';
+  }
+
+  function hideUIInstructions() {
+    document.querySelector('.instructions-owl').className = 'instructions-owl invisible';
+    document.querySelector('.instructions-overview').className = 'instructions-overview invisible';
+  }
 
   function clamp(x, a, b) {
     return Math.max(a, Math.min(x, b));
@@ -552,8 +577,10 @@
     // zoom in on owl if not yet
     if (typeof owl !== 'undefined' && cameraTarget != owlCameras[owl]) {
       cameraTarget = owlCameras[owl];
+      setUIFocus(owl);
     } else if (typeof owl === 'undefined') {
       cameraTarget = cameraOverview;
+      setUIOverview();
     }
 
     tweenCamera(cameraTarget);
@@ -572,10 +599,12 @@
     var mesh;
     var owl = getTargetOwl();
 
+    hideUIInstructions();
     mouseX = event.clientX - centerX;
     mouseY = event.clientY;
     pointer.set(( event.clientX / window.innerWidth ) * 2 - 1, - ( event.clientY / window.innerHeight ) * 2 + 1);
     updateRaycasting();
+
 
     turnHead(touchOwl, clamp(targetRotationsStart[touchOwl] + ( mouseX - mouseXStart ) * 0.01, -Math.PI, 0), 1.0, true );
     // targetRotations[owl] = clamp(targetRotationsStart[owl] + ( mouseX - mouseXStart ) * 0.01, -Math.PI, 0);
@@ -611,8 +640,10 @@
       // zoom in on owl if not yet
       if (typeof owl !== 'undefined' && cameraTarget != owlCameras[owl]) {
         cameraTarget = owlCameras[owl];
+        setUIFocus(owl);
       } else if (typeof owl === 'undefined') {
         cameraTarget = cameraOverview;
+        setUIOverview();
       }
 
       event.preventDefault();
@@ -642,6 +673,7 @@
       pointer.set(( event.touches[0].pageX / window.innerWidth ) * 2 - 1, - ( event.touches[0].pageY / window.innerHeight ) * 2 + 1);
       updateRaycasting();
 
+      hideUIInstructions();
       turnHead(touchOwl, clamp(targetRotationsStart[touchOwl] + ( mouseX - mouseXStart ) * 0.01, -Math.PI, 0), 1.0, true );
       // targetRotations[owl] = clamp(targetRotationsStart[owl] + ( mouseX - mouseXStart ) * 0.01, -Math.PI, 0);
 
@@ -655,4 +687,7 @@
 
   init();
   submitValuesThrottled = $.throttle(250, submitValues);
+
+  // special UI hooks
+
 })();

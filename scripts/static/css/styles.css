@@ -6,6 +6,8 @@ body {
   padding: 0;
   overflow: hidden;
   background-color: #333;
+
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
 .tooltip {
@@ -31,4 +33,138 @@ body {
 
 .tooltip.rotation {
   top: 25%;
+}
+
+.invisible {
+  display: none;
+}
+
+.title {
+  position: absolute;
+  z-index: 99;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%);
+  -webkit-transform: translateX(-50%);
+
+  margin: 0;
+}
+
+.title svg {
+  min-width: 100px;
+  width: 100px;
+  height: 60px;
+  max-width: 80vw;
+}
+
+button.button-back.owl {
+  position: absolute;
+  opacity: 1.0;
+}
+
+.button-back {
+  opacity: 0.0;
+  background-image: url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%201184.5%20977%22%3E%3Cpath%20d%3D%22M159.7%2C452.3%2C528.2%2C83.9A44.5%2C44.5%2C0%2C1%2C0%2C465.3%2C21S127.3%2C359.1%2C21.2%2C465.1a44.7%2C44.7%2C0%2C0%2C0%2C0%2C62.9C122.5%2C629.2%2C449.6%2C956.4%2C465.3%2C972a44.5%2C44.5%2C0%2C0%2C0%2C62.9-62.8L160%2C541.1h988.3a44.4%2C44.4%2C0%2C1%2C0%2C0-88.9Z%22%20transform%3D%22translate%28-8.2%20-8%29%22%20style%3D%22fill%3A%23fff%3Bfill-rule%3Aevenodd%22%2F%3E%3C%2Fsvg%3E');
+  background-repeat: no-repeat;
+  background-size: 50%;
+  background-position: center center;
+  background-color: rgba(0,0,0,0);
+
+  display: inline-block;
+  width: 42px;
+  height: 42px;
+  border: 1px solid #fff;
+  -webkit-border-radius: 50%;
+  border-radius: 50%;
+
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  -webkit-transition: background-color ease-in-out 0.2s, opacity ease-in-out 0.2s;
+  transition: background-color ease-in-out 0.2s, opacity ease-in-out 0.2s;
+
+}
+
+.button-back:active,
+.button-back:hover {
+  background-color: rgba(255,255,255,1.0);
+  background-image: url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%201184.5%20977%22%3E%3Cpath%20d%3D%22M159.7%2C452.3%2C528.2%2C83.9A44.5%2C44.5%2C0%2C1%2C0%2C465.3%2C21S127.3%2C359.1%2C21.2%2C465.1a44.7%2C44.7%2C0%2C0%2C0%2C0%2C62.9C122.5%2C629.2%2C449.6%2C956.4%2C465.3%2C972a44.5%2C44.5%2C0%2C0%2C0%2C62.9-62.8L160%2C541.1h988.3a44.4%2C44.4%2C0%2C1%2C0%2C0-88.9Z%22%20transform%3D%22translate%28-8.2%20-8%29%22%20style%3D%22fill%3A%23231f20%3Bfill-rule%3Aevenodd%22%2F%3E%3C%2Fsvg%3E');
+  -webkit-transition: background-color ease-in-out 0.2s, opacity ease-in-out 0.2s;
+  transition: background-color ease-in-out 0.2s, opacity ease-in-out 0.2s;
+}
+
+.instructions {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  color: white;
+  opacity: 1.0;
+
+  -webkit-transform: translateX(-50%);
+  transform: translateX(-50%);
+
+  /*-webkit-transition: background-color ease-in-out 0.2s, opacity ease-in-out 5s;*/
+  /*transition: background-color ease-in-out 0.2s, opacity ease-in-out 5s;*/
+
+  pointer-events: none;
+  width: 100%;
+  text-align: center;
+}
+
+.box {
+  display: inline-block;
+}
+.instructions svg {
+  height: 50px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.instructions-owl,
+.instructions-overview {
+  display: inline-block;
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  -webkit-transform: translateX(-50%);
+  transform: translateX(-50%);
+
+  -webkit-transition: background-color ease-in-out 0.2s, opacity ease-in-out 0.5s;
+  transition: background-color ease-in-out 0.2s, opacity ease-in-out 0.5s;
+}
+
+.instructions .invisible {
+  opacity: 0.0;
+}
+
+.instructions span {
+  display: block;
+  font-size: 12px;
+  /*font-weight: bold;*/
+  text-transform: uppercase;
+  margin-top: 0.5em;
+}
+.box + .box {
+  margin-left: 3em;
+}
+
+.instructions-owl.hidden,
+.instructions-overview.hidden {
+  display: none;
+}
+
+.instructions-overview {
+  opacity: 1.0;
+  -webkit-transition: background-color ease-in-out 0.2s, opacity ease-in-out 0.5s;
+  transition: background-color ease-in-out 0.2s, opacity ease-in-out 0.5s;
+}
+
+.instructions-owl {
+  opacity: 1.0;
+  -webkit-transition: background-color ease-in-out 0.2s, opacity ease-in-out 0.5s;
+  transition: background-color ease-in-out 0.2s, opacity ease-in-out 0.5s;
 }

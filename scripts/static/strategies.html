@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <title>Snowy Owls * Lenzerheide Zauberwald 2015</title>
+
+    <!-- Bootstrap -->
+    <link href="static/css/bootstrap.min.css" rel="stylesheet">
+  </head>
+  <style>
+    html {
+      height: 100%;
+    }
+    body {
+      background: #000 url('/static/images/owlbg.jpg') center center no-repeat;
+      background-size: auto 100%;
+      color: #fff;
+      font: 1.5em/1.4 Helvetica,Arial,sans-serif;
+      text-shadow: 1px 1px 1px #000;
+      text-align: center;
+
+    }
+    h1 {
+      font-weight: bold;
+      margin-bottom: 50vh;
+    }
+    p {
+      margin-bottom: 1em;
+      font-weight: bold;
+    }
+    .intro {
+      font-weight: bold;
+    }
+    .btn {
+      font-weight: bold;
+      margin-bottom: 0.25em;
+    }
+    .refresh {
+      background-color: #eee;
+      color: #000;
+      margin-bottom: 1em;
+    }
+    .refresh:active,
+    .refresh:focus {
+      background-color: darkred;
+    }
+    .btn-default:active,
+    .btn-default.active:hover,
+    .btn.active:focus {
+      background-color: darkred;
+      color: white;
+    }
+    .btn-default.active {
+      background-color: green;
+      color: white;
+      border: 1px solid darkgreen;
+    }
+    .list {
+      margin-top: 1.5em;
+    }
+    button.active {
+      background-color: lightgreen;
+    }
+    body {
+      padding: 0.5em;
+    }
+    a {
+      text-shadow: none;
+    }
+
+  </style>
+  <body>
+
+  <div class="container-fluid">
+    <h1>Snowy Owls</h1>
+
+    <p class="intro">Willkommen bei den Schnee-Eulen. Hier kannst du ihnen einflüstern, was sie machen sollen. Bitte jeweils etwas Geduld, es dauert ein paar Sekunden bis sie sich anpassen.</p>
+    <button class="btn btn-default col-xs-12 refresh"><span class="glyphicon glyphicon-refresh"></span> Ansicht aktualisieren</button>
+
+    <div class="row list">
+      <div class="master-strategies">
+      </div>
+    </div>
+
+    <p class="direct">
+      <a class="btn btn-default" href="static/direct.html#KLAUS">Direct KLAUS</a>
+      <a class="btn btn-default"  href="static/direct.html#MARTHA">Direct MARTHA</a>
+      <a class="btn btn-default"  href="static/direct.html#KEVIN">Direct KEVIN</a>
+      <a class="btn btn-default"  href="static/direct.html#LISA">Direct LISA</a>
+      <a class="btn btn-default"  href="static/direct.html#MAJA">Direct MAJA</a>
+    </p>
+
+    <script src="static/js/jquery-2.1.4.min.js"></script>
+    <script src="static/js/bootstrap.min.js"></script>
+    <script src="static/js/snowly.js"></script>
+  </div>
+
+  </body>
+</html>
