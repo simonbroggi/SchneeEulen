@@ -11,14 +11,11 @@
   'use strict';
 
   var container, scene, renderer, camera, light, cube, loader, animation;
-  var WIDTH, HEIGHT, VIEW_ANGLE, ASPECT, NEAR, FAR;
+  var WIDTH, HEIGHT, VIEW_ANGLE, VIEW_ANGLE_OVERVIEW, ASPECT, NEAR, FAR;
 
   var mouseX, mouseY;
   var mouseXStart = 0, mouseYStart = 0;
   var submitValuesThrottled;
-
-  //var targetRotationStart = 0, targetRotation = 0;
-  //var targetAmbientStart = 0.0, targetAmbient = 0.5;
 
   var centerX = window.innerWidth / 2;
   var centerY = window.innerHeight / 2;
@@ -28,6 +25,28 @@
   var targetRotations = [], targetAmbients = [];
   var targetRotationsStart = [], targetAmbientsStart = [];
   var submitRotations = [], submitAmbients = [];
+
+  // -z, +y, +x
+  var cameraPositionOverview = new THREE.Vector3(15, 3, 0);
+  var lookAtOverview = new THREE.Vector3(0, 2, -1);
+  var cameraPositionTarget = new THREE.Vector3(0, 0, 0);
+  var cameraLookAtTarget = new THREE.Vector3(0, 0, 0);
+  var cameraTarget, cameraOverview;
+
+  // owl camera settings
+  VIEW_ANGLE_OVERVIEW = 70;
+  VIEW_ANGLE = 45;
+  ASPECT = WIDTH / HEIGHT;
+  NEAR = 1;
+  FAR = 10000;
+
+  // look at factor * owlHeight
+  var cameraLookAtHeight = 0.4;
+
+
+  var owlScales = [1.0, 1.0, .5, .5, .5];
+  var owlNames = ['MARTHA', 'KLAUS', 'KEVIN','MAJA','LISA'];
+  var owlBounds;
 
   var numOwls = 5;
   var owlPositions = [
@@ -45,18 +64,6 @@
     new THREE.Vector3(10, 4, 0)
   ];
 
-  // -z, +y, +x
-  var cameraPositionOverview = new THREE.Vector3(15, 3, 0);
-  var lookAtOverview = new THREE.Vector3(0, 2, -1);
-  var cameraPositionTarget = new THREE.Vector3(0, 0, 0);
-  var cameraLookAtTarget = new THREE.Vector3(0, 0, 0);
-
-  // look at factor * owlHeight
-  var cameraLookAtHeight = 0.4;
-
-  var owlScales = [1.0, 1.0, .33, .33, .33];
-  var owlNames = ['MARTHA', 'KLAUS', 'KEVIN','MAJA','LISA'];
-  var owlBounds;
 
   // initialize owl structs
   var i;
@@ -91,10 +98,6 @@
   WIDTH = window.innerWidth;
   HEIGHT = window.innerHeight;
 
-  VIEW_ANGLE = 45;
-  ASPECT = WIDTH / HEIGHT;
-  NEAR = 1;
-  FAR = 10000;
 
   var sio;
   var tsRot = -1, tsDimBody = -1;
@@ -305,12 +308,23 @@
 
     container.appendChild(renderer.domElement);
 
+    // map owl cameras
+    var mappedCameras = owlCameras.map(function(v, i) {
+      var cam = new THREE.PerspectiveCamera(VIEW_ANGLE, ASPECT, NEAR, FAR);
+      cam.position.copy(v);
+      return cam;
+    });
+    owlCameras = mappedCameras;
+
     camera = new THREE.PerspectiveCamera(VIEW_ANGLE, ASPECT, NEAR, FAR);
+    cameraOverview = camera;
 
     camera.position.set( cameraPositionOverview.x, cameraPositionOverview.y, cameraPositionOverview.z );
     camera.lookAt(lookAtOverview);
-    cameraPositionTarget = cameraPositionOverview;
-    cameraLookAtTarget = lookAtOverview;
+    cameraOverview = camera.clone();
+
+    // cameraPositionTarget = cameraPositionOverview;
+    // cameraLookAtTarget = lookAtOverview;
 
     scene.add(camera);
 
@@ -399,6 +413,12 @@
       //var aspectRatio = w / h;
       //var distance = maxDim/ 2 /  aspectRatio / Math.tan(Math.PI * fov / 360);
 
+      // look at owls
+      owlCameras.forEach(function(v, i) {
+        var p = owlPositions[i].add(new THREE.Vector3(0, owlSizes[i][1]*cameraLookAtHeight, 0));
+        v.lookAt(p);
+      });
+
       render();
     });
 
@@ -444,23 +464,36 @@
    * @param targetPos
    * @param targetLookAt
      */
-  function tweenCamera(targetPos, targetLookAt) {
+  function tweenCamera(targetCamera) {
 
-    var duration = 1000;
+    var duration = 500;
+
     // see http://stackoverflow.com/questions/15696963/three-js-set-and-read-camera-look-vector/15697227#15697227
-    var currentLookAt = new THREE.Vector3( 0, 0, -1 ).applyQuaternion( camera.quaternion ).add( camera.position );
-    var currentPos = camera.position.clone();
+    // var currentLookAt = new THREE.Vector3( 0, 0, -1 ).applyQuaternion( camera.quaternion ).add( camera.position );
+    // var currentPos = camera.position.clone();
+    //
+    // var camUpdate = function() {
+    //   var v = currentLookAt.clone().add(targetLookAt.clone().sub(currentLookAt).multiplyScalar(this.t));
+    //   camera.position.copy( currentPos.clone().add(targetPos.clone().sub(currentPos).multiplyScalar(this.t)) );
+    //   camera.lookAt(v);
+    // };
+    //
+    // var prop = {
+    //   t: 0.0
+    // };
+    // new TWEEN.Tween(prop).to({ t: 1.0 }, duration).easing(TWEEN.Easing.Cubic.InOut).onUpdate(camUpdate).start();
 
-    var camUpdate = function() {
-      var v = currentLookAt.clone().add(targetLookAt.clone().sub(currentLookAt).multiplyScalar(this.t));
-      camera.position.copy( currentPos.clone().add(targetPos.clone().sub(currentPos).multiplyScalar(this.t)) );
-      camera.lookAt(v);
+    var fromQuaternion = camera.quaternion.clone();
+    var fromPosition = camera.position.clone();
+    var camUpdate = function(t) {
+      camera.quaternion.copy(fromQuaternion).slerp(targetCamera.quaternion, t);
+      camera.position.copy(fromPosition).lerp(targetCamera.position, t);
     };
 
     var prop = {
       t: 0.0
     };
-    new TWEEN.Tween(prop).to({ t: 1.0 }, duration).easing(TWEEN.Easing.Cubic.InOut).onUpdate(camUpdate).start();
+    new TWEEN.Tween(prop).to({ t: 1.0 }, duration).onUpdate(camUpdate).start();
   }
 
 
@@ -515,19 +548,15 @@
 
     var owl = getTargetOwl();
 
+
     // zoom in on owl if not yet
-    if (typeof owl !== 'undefined' && cameraPositionTarget != owlCameras[owl]) {
-      cameraPositionTarget = owlCameras[owl].clone();
-      // console.log('cameraPositionTarget',cameraPositionTarget);
-      cameraLookAtTarget = owlPositions[owl].clone();
-      cameraLookAtTarget.add(new THREE.Vector3(0, owlSizes[owl][1] * cameraLookAtHeight, 0));
-    } else
-    if (typeof owl === 'undefined') {
-      cameraPositionTarget = cameraPositionOverview;
-      cameraLookAtTarget = lookAtOverview;
+    if (typeof owl !== 'undefined' && cameraTarget != owlCameras[owl]) {
+      cameraTarget = owlCameras[owl];
+    } else if (typeof owl === 'undefined') {
+      cameraTarget = cameraOverview;
     }
 
-    tweenCamera(cameraPositionTarget, cameraLookAtTarget);
+    tweenCamera(cameraTarget);
 
     if (typeof owl !== 'undefined') {
       touchOwl = owl;
@@ -537,7 +566,6 @@
     } else {
       touchOwl = undefined;
     }
-
   }
 
   function onDocumentMouseMove( event ) {
@@ -579,22 +607,13 @@
       updateRaycasting();
 
       var owl = getTargetOwl();
-      for (i=0; i<intersects.length; i++) {
-        // console.log(intersects[i]);
-      }
 
       // zoom in on owl if not yet
-      if (typeof owl !== 'undefined' && cameraPositionTarget != owlCameras[owl]) {
-        cameraPositionTarget = owlCameras[owl].clone();
-        cameraLookAtTarget = owlPositions[owl].clone();
-        cameraLookAtTarget.add(new THREE.Vector3(0, owlSizes[owl][1] * cameraLookAtHeight, 0));
-      } else
-      if (typeof owl === 'undefined') {
-        cameraPositionTarget = cameraPositionOverview;
-        cameraLookAtTarget = lookAtOverview;
+      if (typeof owl !== 'undefined' && cameraTarget != owlCameras[owl]) {
+        cameraTarget = owlCameras[owl];
+      } else if (typeof owl === 'undefined') {
+        cameraTarget = cameraOverview;
       }
-
-      tweenCamera(cameraPositionTarget, cameraLookAtTarget);
 
       event.preventDefault();
       mouseXStart = event.touches[0].pageX - centerX;
