@@ -16,6 +16,7 @@
   var mouseX, mouseY;
   var mouseXStart = 0, mouseYStart = 0;
   var submitValuesThrottled;
+  var activeTouchOwl;
 
   var centerX = window.innerWidth / 2;
   var centerY = window.innerHeight / 2;
@@ -138,7 +139,7 @@
       // parse message
       try {
         if (typeof evt.data !== 'undefined') {
-          evt.data.replace(/NaN/g,/\"NaN\"/);
+          evt.data.replace(/nan/g,/\"NaN\"/);
         }
 
         if (evt.data === '') {
@@ -226,7 +227,7 @@
         // note: due to the implementation of multi-threading at the cherrypy/ws4py server side, commands
         // may arrive in wrong order! We therefore use a pre-command timestamp to ignore older packets
         if (data.ts <= tsRot) console.error(data);
-        if (index !== +touchOwl && data.ts > tsRot) {
+        if (index !== +activeTouchOwl && data.ts > tsRot) {
           tsRot = data.ts;
 
           turnHead(index, -Math.PI - rad, data.duration, false );
@@ -239,7 +240,7 @@
       data.clients.forEach(function(val, index) {
         index = owlNames.indexOf(val);
 
-        if (data.id == 'body' && index !== +touchOwl && data.ts > tsDimBody) {
+        if (data.id == 'body' && index !== +activeTouchOwl && data.ts > tsDimBody) {
           tsDimBody = data.ts;
           currentLight = targetAmbients[index];
           console.log('[websocket update] dim ', val,'('+index+'):', data.id,' to ', data['end_val'], 'in', data.duration,'ts=',data.ts);
@@ -283,6 +284,41 @@
     }
   }
 
+  // see http://youmightnotneedjquery.com/
+  function toggleClass(el, className) {
+    if (el === null) { return; }
+    if (el.classList) {
+      el.classList.toggle(className);
+    } else {
+      var classes = el.className.split(' ');
+      var existingIndex = classes.indexOf(className);
+
+      if (existingIndex >= 0) {
+        classes.splice(existingIndex, 1);
+      } else {
+        classes.push(className);
+      }
+      el.className = classes.join(' ');
+    }
+  }
+
+  function addClass(el, className) {
+    if (el === null) { return; }
+    if (el.classList) {
+      el.classList.add(className);
+    } else {
+      el.className += ' ' + className;
+    }
+  }
+
+  function removeClass(el, className) {
+    if (el === null) { return; }
+    if (el.classList) {
+      el.classList.remove(className);
+    } else {
+      el.className = el.className.replace(new RegExp('(^|\\b)' + className.split(' ').join('|') + '(\\b|$)', 'gi'), ' ');
+    }
+  }
 
   /**
    * Init 3d owl interface.
@@ -436,31 +472,32 @@
   }
 
   function onBackButtonClick() {
-    console.log('tweening',this);
-
+    cameraTarget = cameraOverview;
     tweenCamera(cameraOverview);
-    this.className = 'button-back';
+    touchOwl = undefined;
+    activeTouchOwl = undefined;
+    
+    setUIOverview();
   }
 
   function setUIOverview() {
-    document.getElementById('back').className = 'button-back';
-    document.querySelector('.instructions-overview').className = 'instructions-overview';
-    document.querySelector('.instructions-owl').className = 'instructions-owl invisible';
-    document.querySelector('h1').className = 'title';
+    addClass(document.querySelector('.instructions-owl'), 'invisible');
+    removeClass(document.querySelector('.instructions-overview'), 'invisible');
+    removeClass(document.querySelector('h1'), 'invisible');
+    removeClass(document.getElementById('back'), 'owl');
   }
 
   function setUIFocus(owl) {
-    document.getElementById('back').className = 'button-back owl';
-    document.querySelector('.instructions-overview').className = 'instructions-overview invisible';
-    document.querySelector('.instructions-owl').className = 'instructions-owl';
-    //document.querySelector('h1').className = 'invisible';
-
+    addClass(document.getElementById('back'), 'owl');
+    addClass(document.querySelector('.instructions-overview'), 'invisible');
+    removeClass(document.querySelector('.instructions-owl'), 'invisible');
+    addClass(document.querySelector('h1'), 'invisible');
   }
 
   function hideUIInstructions() {
-    document.querySelector('.instructions-owl').className = 'instructions-owl invisible';
-    document.querySelector('.instructions-overview').className = 'instructions-overview invisible';
-    document.querySelector('h1').className = 'title invisible';
+    addClass(document.querySelector('.instructions-owl'), 'invisible');
+    addClass(document.querySelector('.instructions-overview'), 'invisible');
+    addClass(document.querySelector('h1'), 'invisible');
   }
 
   function clamp(x, a, b) {
@@ -573,6 +610,7 @@
     document.addEventListener( 'mousemove', onDocumentMouseMove, false );
     document.addEventListener( 'mouseup', onDocumentMouseUp, false );
     document.addEventListener( 'mouseout', onDocumentMouseOut, false );
+
     mouseXStart = event.clientX - centerX;
     mouseYStart = event.clientY;
     pointer.set(( event.clientX / window.innerWidth ) * 2 - 1, - ( event.clientY / window.innerHeight ) * 2 + 1);
@@ -580,14 +618,17 @@
 
     var owl = getTargetOwl();
 
-
     // zoom in on owl if not yet
     if (typeof owl !== 'undefined' && cameraTarget != owlCameras[owl]) {
       cameraTarget = owlCameras[owl];
       setUIFocus(owl);
     } else if (typeof owl === 'undefined') {
-      cameraTarget = cameraOverview;
-      setUIOverview();
+      if (typeof touchOwl === 'undefined') {
+        cameraTarget = cameraOverview;
+        setUIOverview();
+      } else {
+        owl = touchOwl;
+      }
     }
 
     tweenCamera(cameraTarget);
@@ -604,7 +645,6 @@
 
   function onDocumentMouseMove( event ) {
     var mesh;
-    var owl = getTargetOwl();
 
     hideUIInstructions();
     mouseX = event.clientX - centerX;
@@ -612,25 +652,26 @@
     pointer.set(( event.clientX / window.innerWidth ) * 2 - 1, - ( event.clientY / window.innerHeight ) * 2 + 1);
     updateRaycasting();
 
-
-    turnHead(touchOwl, clamp(targetRotationsStart[touchOwl] + ( mouseX - mouseXStart ) * 0.01, -Math.PI, 0), 1.0, true );
-    // targetRotations[owl] = clamp(targetRotationsStart[owl] + ( mouseX - mouseXStart ) * 0.01, -Math.PI, 0);
-
-    targetAmbients[touchOwl] = clamp(targetAmbientsStart[touchOwl] + (mouseYStart - mouseY) * 0.005, 0.0, 1.0);
+    var owl = getTargetOwl() || touchOwl;
+    if (typeof owl !== 'undefined') {
+      activeTouchOwl = touchOwl;
+      turnHead(touchOwl, clamp(targetRotationsStart[touchOwl] + ( mouseX - mouseXStart ) * 0.01, -Math.PI, 0), 1.0, true );
+      targetAmbients[touchOwl] = clamp(targetAmbientsStart[touchOwl] + (mouseYStart - mouseY) * 0.005, 0.0, 1.0);
+    }
   }
 
   function onDocumentMouseUp( event ) {
     document.removeEventListener( 'mousemove', onDocumentMouseMove, false );
     document.removeEventListener( 'mouseup', onDocumentMouseUp, false );
     document.removeEventListener( 'mouseout', onDocumentMouseOut, false );
-    touchOwl = undefined;
+    // touchOwl = undefined;
   }
 
   function onDocumentMouseOut( event ) {
     document.removeEventListener( 'mousemove', onDocumentMouseMove, false );
     document.removeEventListener( 'mouseup', onDocumentMouseUp, false );
     document.removeEventListener( 'mouseout', onDocumentMouseOut, false );
-    touchOwl = undefined;
+    activeTouchOwl = touchOwl;
   }
 
   function onDocumentTouchStart( event ) {
@@ -649,13 +690,17 @@
         cameraTarget = owlCameras[owl];
         setUIFocus(owl);
       } else if (typeof owl === 'undefined') {
-        cameraTarget = cameraOverview;
-        setUIOverview();
+        if (typeof touchOwl === 'undefined') {
+          cameraTarget = cameraOverview;
+          setUIOverview();
+        } else {
+          owl = touchOwl;
+        }
       }
 
       tweenCamera(cameraTarget);
 
-      event.preventDefault();
+      // event.preventDefault();
       mouseXStart = event.touches[0].pageX - centerX;
       mouseYStart = event.touches[0].pageY;
 
@@ -672,9 +717,8 @@
   }
 
   function onDocumentTouchMove( event ) {
-    var owl = 0;
     if ( event.touches.length === 1 ) {
-      owl = getTargetOwl();
+
       event.preventDefault();
       mouseX = event.touches[0].pageX - centerX;
       mouseY = event.touches[0].pageY;
@@ -682,16 +726,19 @@
       pointer.set(( event.touches[0].pageX / window.innerWidth ) * 2 - 1, - ( event.touches[0].pageY / window.innerHeight ) * 2 + 1);
       updateRaycasting();
 
-      hideUIInstructions();
-      turnHead(touchOwl, clamp(targetRotationsStart[touchOwl] + ( mouseX - mouseXStart ) * 0.01, -Math.PI, 0), 1.0, true );
-      // targetRotations[owl] = clamp(targetRotationsStart[owl] + ( mouseX - mouseXStart ) * 0.01, -Math.PI, 0);
+      var owl = getTargetOwl() || touchOwl;
+      if (typeof touchOwl !== 'undefined') {
+        activeTouchOwl = touchOwl;
+        hideUIInstructions();
+        turnHead(touchOwl, clamp(targetRotationsStart[touchOwl] + ( mouseX - mouseXStart ) * 0.01, -Math.PI, 0), 1.0, true );
+        targetAmbients[touchOwl] = clamp(targetAmbientsStart[touchOwl] + (mouseYStart - mouseY) * 0.005, 0.0, 1.0);
+      }
 
-      targetAmbients[owl] = clamp(targetAmbientsStart[owl] + (mouseYStart - mouseY) * 0.005, 0.0, 1.0);
     }
   }
 
   function onDocumentTouchEnd(event) {
-    touchOwl = undefined;
+    activeTouchOwl = undefined;
   }
 
   init();
