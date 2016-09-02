@@ -38,6 +38,7 @@ from strategies.master.idle import Idle
 # logging configuration
 log = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG, format='[%(levelname)s] (%(threadName)-10s) %(message)s')
+
 wsm = WebSocketManager()
 
 # enable websockets
@@ -351,7 +352,6 @@ class SnowlyWebService:
     @cherrypy.tools.json_out()
     @cherrypy.tools.accept(media='application/json')
     def GET(self, *vpath):
-        logging.error("blablablabla")
         try:
             cmd = vpath[0]
             if cmd == 'clients':
@@ -488,6 +488,7 @@ if __name__ == '__main__':
     # except KeyboardInterrupt:
     #     logging.debug('interrupted - signalling exit')
     #     snowlynet.signal_exit()
+
 
     # owl control web interface
     logging.debug('=== initializing owl web control interface')
