@@ -28,8 +28,8 @@
   var submitRotations = [], submitAmbients = [];
 
   // -z, +y, +x
-  var cameraPositionOverview = new THREE.Vector3(15, 3, 0);
-  var lookAtOverview = new THREE.Vector3(0, 2, -1);
+  var cameraPositionOverview = new THREE.Vector3(28, 8, 0);
+  var lookAtOverview = new THREE.Vector3(0, 4, -3);
   var cameraPositionTarget = new THREE.Vector3(0, 0, 0);
   var cameraLookAtTarget = new THREE.Vector3(0, 0, 0);
   var cameraTarget, cameraOverview;
@@ -46,23 +46,24 @@
 
 
   var owlScales = [1.0, 1.0, .5, .5, .5];
-  var owlNames = ['MARTHA', 'KLAUS', 'KEVIN','MAJA','LISA'];
+  var owlNames = ['KLAUS', 'MARTHA', 'KEVIN','MAJA','LISA'];
   var owlBounds;
 
   var numOwls = 5;
+   // -z, +y, +x
   var owlPositions = [
-    new THREE.Vector3( 0,  0,  0),
-    new THREE.Vector3(-2,  0, -2),
-    new THREE.Vector3( 3,  0,  2),
-    new THREE.Vector3(-4,  0, -7),
-    new THREE.Vector3(-7,  0, -6)
+    new THREE.Vector3( -2,  4,  -1),
+    new THREE.Vector3(4,  0, -8),
+    new THREE.Vector3( -2,  4,  4),
+    new THREE.Vector3(0,  1, 2),
+    new THREE.Vector3(-1, 2, -5)
   ];
   var owlCameras = [
-    new THREE.Vector3(10, 0, 0),
-    new THREE.Vector3(6, 2, -8),
-    new THREE.Vector3(10, 4, 0),
-    new THREE.Vector3(10, 4, 0),
-    new THREE.Vector3(10, 4, 0)
+    new THREE.Vector3(10, 10, 0),
+    new THREE.Vector3(14, 2, -6),
+    new THREE.Vector3(7, 4, 10),
+    new THREE.Vector3(8, 3, 4),
+    new THREE.Vector3(10, 3, 0)
   ];
 
 
