@@ -68,9 +68,9 @@ MASTER_PLAYLIST = [
     'AutoClient',
     'NightOwls',
     'LightUp',
-    'Dancer',
+    # 'Dancer',
     'Headshake',
-    'Sleep',
+    # 'Sleep',
     'Idle'
 ]
 
