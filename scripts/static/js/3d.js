@@ -285,6 +285,13 @@
   }
 
   // see http://youmightnotneedjquery.com/
+  function hasClass(el, className) {
+    if (el.classList)
+      el.classList.contains(className);
+    else
+      new RegExp('(^| )' + className + '( |$)', 'gi').test(el.className);
+  }
+
   function toggleClass(el, className) {
     if (el === null) { return; }
     if (el.classList) {
@@ -469,6 +476,7 @@
     document.addEventListener('touchend', onDocumentTouchEnd, false);
 
     document.getElementById('back').addEventListener('click', onBackButtonClick);
+    document.getElementById('info').addEventListener('click', onInfoButtonClick);
   }
 
   function onBackButtonClick() {
@@ -478,6 +486,17 @@
     activeTouchOwl = undefined;
     
     setUIOverview();
+  }
+
+  function onInfoButtonClick() {
+    var btn = document.getElementById('info');
+    if (hasClass(btn, 'close')) {
+      removeClass(btn, 'close');
+      removeClass(document.getElementById('info-panel'), 'open');
+    } else {
+      addClass(btn, 'close');
+      addClass(document.getElementById('info-panel'), 'open');
+    }
   }
 
   function setUIOverview() {
