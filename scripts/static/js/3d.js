@@ -288,9 +288,9 @@
   // see http://youmightnotneedjquery.com/
   function hasClass(el, className) {
     if (el.classList)
-      el.classList.contains(className);
+      return el.classList.contains(className);
     else
-      new RegExp('(^| )' + className + '( |$)', 'gi').test(el.className);
+      return new RegExp('(^| )' + className + '( |$)', 'gi').test(el.className);
   }
 
   function toggleClass(el, className) {
@@ -494,9 +494,11 @@
     if (hasClass(btn, 'close')) {
       removeClass(btn, 'close');
       removeClass(document.getElementById('info-panel'), 'open');
+      addClass(document.getElementById('info-panel'), 'hidden')
     } else {
       addClass(btn, 'close');
       addClass(document.getElementById('info-panel'), 'open');
+      removeClass(document.getElementById('info-panel'), 'hidden')
     }
   }
 
@@ -505,6 +507,7 @@
     removeClass(document.querySelector('.instructions-overview'), 'invisible');
     removeClass(document.querySelector('h1'), 'invisible');
     removeClass(document.getElementById('back'), 'owl');
+    removeClass(document.getElementById('info'), 'hidden');
   }
 
   function setUIFocus(owl) {
@@ -512,6 +515,7 @@
     addClass(document.querySelector('.instructions-overview'), 'invisible');
     removeClass(document.querySelector('.instructions-owl'), 'invisible');
     addClass(document.querySelector('h1'), 'invisible');
+    addClass(document.getElementById('info'), 'hidden');
   }
 
   function hideUIInstructions() {
