@@ -3,7 +3,7 @@
 	url = https://github.com/joan2937/pigpio
 [submodule "libs/cherrypy"]
 	path = libs/cherrypy
-	url = https://github.com/cherrypy/cherrypy.git
+	url = https://github.com/cherrypy/cherrypy
 [submodule "libs/ws4py"]
 	path = libs/ws4py
 	url = https://github.com/Lawouach/WebSocket-for-Python.git
