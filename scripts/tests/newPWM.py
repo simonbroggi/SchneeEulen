@@ -14,7 +14,6 @@ spi = busio.SPI(board.SCK, MOSI=board.MOSI)
 # Define the TLC59711 instance.
 leds = adafruit_tlc59711.TLC59711(spi)
 
-
 # use 'GPIO naming'
 wiringpi.wiringPiSetupGpio()
 
@@ -22,10 +21,10 @@ wiringpi.wiringPiSetupGpio()
 servo_pin = 18
 wiringpi.pinMode(servo_pin, wiringpi.GPIO.PWM_OUTPUT)
 # set the PWM mode to milliseconds stype
-#wiringpi.pwmSetMode(wiringpi.GPIO.PWM_MODE_MS)
+wiringpi.pwmSetMode(wiringpi.GPIO.PWM_MODE_MS)
 # divide down clock
-#wiringpi.pwmSetClock(192)
-#wiringpi.pwmSetRange(2000)
+wiringpi.pwmSetClock(192)
+wiringpi.pwmSetRange(2000)
 
 step_time = 0.01 # time to sleep each loop
 duration = 5 # total time to run
@@ -41,8 +40,8 @@ for i in range(0, n_steps):
     led_value = int(65535*i/n_steps)
     leds[0] = (led_value, led_value, led_value)
 
-    pulse = pulse_delta*i/n_steps + pulse_min
-    #wiringpi.pwmWrite(servo_pin, pulse)
+    pulse = int(pulse_delta*i/n_steps) + pulse_min
+    wiringpi.pwmWrite(servo_pin, pulse)
 
     time.sleep(step_time)
 
