@@ -1,40 +1,33 @@
-PodSixNet - Lightweight Multiplayer Game Library in Python
-----------------------------------------------------------
-
-Copyright [Chris McCormick](mailto:chris@mccormick.cx), 2009-2010. ([Google code page](http://code.google.com/p/podsixnet/)) ([Launchpad project page](https://launchpad.net/podsixnet))
-
-[http://mccormick.cx/](http://mccormick.cx/)
-
-[http://podsix.com.au/](http://podsix.com.au/)
-
-[PodSixNet mailing list](http://groups.google.com/group/podsixnet) (great for getting help)
+PodSixNet - lightweight multiplayer networking library for Python games
+-----------------------------------------------------------------------
 
 PodSixNet is a lightweight network layer designed to make it easy to write multiplayer games in Python. It uses Python's built in asyncore library and rencode.py (included) to asynchronously serialise network events and arbitrary data structures, and deliver them to your high level classes through simple callback methods.
 
 Each class within your game client which wants to receive network events, subclasses the ConnectionListener class and then implements `Network_*` methods to catch specific user-defined events from the server. You don't have to wait for buffers to fill, or check sockets for waiting data or anything like that, just do `connection.Pump()` once per game loop and the library will handle everything else for you, passing off events to all classes that are listening. Sending data back to the server is just as easy, using `connection.Send(mydata)`. Likewise on the server side, events are propagated to `Network_*` method callbacks and data is sent back to clients with the `client.Send(mydata)` method.
 
-If you find a bug, please report it on the mailing list or the [Google code issues page](http://code.google.com/p/podsixnet/issues/list).
+The [PodSixNet mailing list](http://groups.google.com/group/podsixnet) is good for getting help from other users.
 
 For users of the Construct game making environment for Windows, there is a tutorial on doing multiplayer networking with PodSixNet, [here](http://www.scirra.com/forum/viewtopic.php?f=8&t=6299). Thanks to Dave Chabo for contributing this tutorial.
+
+Here is [another tutorial by Julian Meyer](http://www.raywenderlich.com/38732/multiplayer-game-programming-for-teens-with-python).
 
 Install
 -------
 
-First make sure you have [Python](http://python.org/) 2.4 or greater installed.
+`pip install PodSixNet`
+
+or
+
+`easy_install PodSixNet`
+
+
+### From source
+
+First make sure you have [Python](http://python.org/) 2.4 or greater installed (python 3 also works).
 
 Next you'll want to get the PodSixNet source.
 
-You can either check the latest cutting-edge code out of the bzr repository:
-
- * bzr co http://mccormick.cx/dev/PodSixNet/
-
-Of if you prefer SVN check it out of the Google code project:
-
- * svn co http://podsixnet.googlecode.com/svn/podsixnet/ PodSixNet
-
-Or you can [download a tarball of the latest release (version ### version ###)](PodSixNet-### version ###.tar.gz).
-
-The module is found inside a subdirectory called PodSixNet within the top level folder. There's an `__init__.py` inside there, so you can just copy or symlink the PodSixNet sub-directory into your own project and then do `import PodSixNet`, or else you can run `sudo setup.py install` to install PodSixNet into your Python path. Use `sudo setup.py develop` if you want to stay up to date with the cutting edge and still be able to svn/bzr up every now and then.
+The module is found inside a subdirectory called PodSixNet within the top level folder. There's an `__init__.py` inside there, so you can just copy or symlink the PodSixNet sub-directory into your own project and then do `import PodSixNet`, or else you can run `sudo python setup.py install` to install PodSixNet into your Python path. Use `sudo python setup.py develop` if you want to stay up to date with the cutting edge and still be able to svn/bzr up every now and then.
 
 By default PodSixNet uses a binary encoder to transfer data over the network, but it can optionally use the [JSON](http://json.org/) format or other formats supported by a serialiser which has 'dumps' and 'loads' methods. If you want to serialise your data using JSON you can change the first line of Channel.py to 'from simplejson import dumps, loads' or use the built-in json library in Python 2.6 or higher. This will allow you to write game clients in languages that can't read the 'rencode' binary format, such as Javascript.
 
@@ -49,12 +42,12 @@ Chat example:
 Whiteboard example:
 
  * `python examples/WhiteboardServer.py`
- * and a couple of instances of `python examples/WhiteboardServer.py`
+ * and a couple of instances of `python examples/WhiteboardClient.py`
 
 LagTime example (measures round-trip time from the server to the client):
 
  * `python examples/LagTimeServer.py`
- * and a couple of instances of `python examples/LatTimeClient.py`
+ * and a couple of instances of `python examples/LagTimeClient.py`
 
 Quick start - Server
 --------------------
@@ -65,10 +58,10 @@ You will need to subclass two classes in order to make your own server. Each tim
 	
 	class ClientChannel(Channel):
 	
-		def Network(data):
+		def Network(self, data):
 			print data
 		
-		def Network_myaction(data):
+		def Network_myaction(self, data):
 			print "myaction:", data
 
 Whenever the client does `connection.Send(mydata)`, the `Network()` method will be called. The method `Network_myaction()` will only be called if your data has a key called 'action' with a value of "myaction". In other words if it looks something like this:
@@ -104,7 +97,7 @@ To have a client connect to your new server, you should use the Connection modul
 
 `Connection.connection` is a singleton Channel which connects to the server. You'll only have one of these in your game code, and you'll use it to connect to the server and send messages to the server.
 
-	from Connection import connection
+	from PodSixNet.Connection import connection
 	
 	# connect to the server - optionally pass hostname and port like: ("mccormick.cx", 31425)
 	connection.Connect()
@@ -117,7 +110,7 @@ You'll also need to put the following code once somewhere in your game loop:
 
 Any time you have an object in your game which you want to receive messages from the server, subclass `ConnectionListener`. For example:
 
-	from Connection import ConnectionListener
+	from PodSixNet.Connection import ConnectionListener
 	
 	class MyNetworkListener(ConnectionListener):
 	
@@ -144,7 +137,7 @@ Another class might implement custom methods like `Network_myaction()`, which wi
 
 And the listener would look like this:
 
-	from Connection import ConnectionListener
+	from PodSixNet.Connection import ConnectionListener
 	
 	class MyPlayerListener(ConnectionListener):
 	
@@ -161,6 +154,8 @@ You can subclass `ConnectionListener` as many times as you like in your applicat
 
 License
 -------
+
+Copyright [Chris McCormick](http://mccormick.cx/), 2009-2015.
 
 PodSixNet is licensed under the terms of the LGPL v3.0 or higher. See the file called [COPYING](COPYING) for details.
 
