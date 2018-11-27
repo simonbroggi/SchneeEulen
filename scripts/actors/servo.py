@@ -10,7 +10,7 @@ except ImportError:
     logging.info("- no pigpio lib available - fallback to dummy mode")
 
 
-import Queue
+import queue
 
 class Servo(threading.Thread):
     signal = True
@@ -39,7 +39,7 @@ class Servo(threading.Thread):
         self.pw_max = pw_max
         self.freq = freq
         self.gpio = gpio
-        self.queue = Queue.Queue()
+        self.queue = queue.Queue()
         self.current_val = pw_min
         self.direction = direction
 
@@ -181,7 +181,7 @@ if __name__ == "__main__":
     try:
         time.sleep(1000)
     except KeyboardInterrupt:
-        print '- interrupt -'
+        print('- interrupt -')
         servo.signal_exit()
         time.sleep(1)
         servo.destroy()

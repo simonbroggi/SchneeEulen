@@ -7,7 +7,7 @@ import logging
 #
 
 # available log levels: NOTSET, DEBUG, INFO, WARNING, ERROR, CRITICAL
-LOG_LEVEL = logging.INFO
+LOG_LEVEL = logging.DEBUG
 
 
 #

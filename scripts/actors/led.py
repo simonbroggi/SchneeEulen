@@ -10,7 +10,7 @@ try:
 except ImportError:
     logging.info("- no pigpio lib available - fallback to dummy mode")
 
-import Queue
+import queue
 
 class Dimmer(threading.Thread):
     MAX_QUEUE_SIZE = 50
@@ -25,7 +25,7 @@ class Dimmer(threading.Thread):
         self.steps = steps
         self.freq = freq
         self.gpio = gpio_led
-        self.queue = Queue.Queue(self.MAX_QUEUE_SIZE)
+        self.queue = queue.Queue(self.MAX_QUEUE_SIZE)
         self.current_val = 0.0
         self.stop_op = False
         self.daemon = True
@@ -149,7 +149,7 @@ if __name__ == "__main__":
     try:
         time.sleep(1000)
     except KeyboardInterrupt:
-        print '- interrupt -'
+        print('- interrupt -')
         dimmer.signal_exit()
         time.sleep(1)
         dimmer.destroy()
