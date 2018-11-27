@@ -13,6 +13,7 @@
 
   <body>
     <button class="button-back" id="back"></button>
+    <button class="button-info" id="info"></button>
 
 	<div class="viewport">
 		<div class="tooltip ambient">Slide for<br/>lighting</div>
@@ -30,7 +31,7 @@
             <span>Select owl</span>
         </div>
 
-        <div class="instructions-owl hidden">
+        <div class="instructions-owl invisible">
             <div class="box">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 479.6 620.2"><title>Unbenannt-7</title><path d="M328.2,121.1a9.7,9.7,0,0,1-8.1-15.1,9.6,9.6,0,0,1,6.2-4.1c46.7-9.6,68-24.4,68-34,0-17.4-62.5-42.6-160.3-42.6S73.5,50.5,73.5,67.9c0,9.7,21.3,24.4,68,34a9.7,9.7,0,0,1-2,19.2l-1.9-.2C83.7,109.9,54.1,91,54.1,67.9c0-40.1,90.5-61.1,179.8-61.1s179.8,21,179.8,61.1c0,23.1-29.7,42-83.5,53.1Z" transform="translate(-38.7 -6.8)" style="fill:#fff"/><path d="M103,156.1a9.7,9.7,0,0,1-6.7-16.8l32.5-31.1-9.1-38.1a9.7,9.7,0,0,1,1.2-7.3,9.6,9.6,0,0,1,6-4.3l2.3-.3a9.7,9.7,0,0,1,9.4,7.5L149,109.2a9.7,9.7,0,0,1-2.7,9.3l-36.5,35A9.5,9.5,0,0,1,103,156.1Z" transform="translate(-38.7 -6.8)" style="fill:#fff"/><path d="M316.5,627.1a113.7,113.7,0,0,1-80.9-33.5L49.2,407.2a35.9,35.9,0,0,1,0-50.8,65.3,65.3,0,0,1,84.8-6l50.8,38.1V159.5a49,49,0,1,1,98,0v91.4l5-2.9a48.9,48.9,0,0,1,70.7,26.2l1.4,4.1,3.6-2.4a49,49,0,0,1,73.5,24.5l1.4,4.1,3.6-2.4a49,49,0,0,1,76.2,40.7V486.5A140.7,140.7,0,0,1,377.8,627.1ZM95.2,357A45.3,45.3,0,0,0,63,370.2a16.5,16.5,0,0,0,0,23.2L249.3,579.8a94.4,94.4,0,0,0,67.2,27.8h61.3A121.2,121.2,0,0,0,498.9,486.5V342.6a29.5,29.5,0,0,0-59,0v13.1a9.7,9.7,0,1,1-19.5,0V316.4a29.5,29.5,0,1,0-59,0v39.2a9.7,9.7,0,0,1-19.5,0V290.3a29.5,29.5,0,0,0-59,0v65.4a9.7,9.7,0,0,1-19.5,0V159.5a29.5,29.5,0,1,0-59,0V408a9.7,9.7,0,0,1-5.4,8.7,9.9,9.9,0,0,1-4.4,1,9.5,9.5,0,0,1-5.8-1.9L122.4,366A45.1,45.1,0,0,0,95.2,357Z" transform="translate(-38.7 -6.8)" style="fill:#fff"/></svg>
                 <span>Head</span>
@@ -43,6 +44,15 @@
         </div>
     </div>
 
+    <div id="info-panel" class="hidden">
+        <p>a light art installation by</p>
+
+        <ul>
+            <li><a href="mailto:simon.broggi@insert-coin.ch">Simon Broggi simon.broggi@insert-coin.ch</a></li>
+            <li><a href="mailto:kj@nextension.com">Kai Jauslin kj@nextension.com</a></li>
+            <li><a href="mailto:info@ursinawirz.com">Ursina Wirz ursina.wirz@gmail.com</a></li>
+        </ul>
+    </div>
     <script src="static/js/tween.min.js"></script>
 	<script type="text/javascript" src="static/js/3d.js"></script>
   </body>
