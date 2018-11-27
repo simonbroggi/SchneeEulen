@@ -138,7 +138,7 @@ class SnowlyClient(ConnectionListener):
         self.is_connecting = 0
 
     def Network_error(self, data):
-        log.debug("error: %s" % data['error'][1])
+        log.debug("error: %s", data)
         self.state = consts.STATE_DISCONNECTED
         self.is_connecting = 0
 
@@ -253,10 +253,10 @@ class SnowlyClient(ConnectionListener):
                         # led dimming command
                         channel = input[1:input.index('.')]
                         val = int(input[input.index('.')+1:])
-                        print "simulate input value: channel=", channel, " val=", val
+                        print("simulate input value: channel=", channel, " val=", val)
                         self.event_input(channel, val)
                     except:
-                        print 'Unknown command'
+                        print('Unknown command')
 
                 return True
         return False
@@ -303,8 +303,13 @@ class SnowlyClient(ConnectionListener):
             self.active_strategy = None
 
     def Loop(self):
-        self.Pump()
-        connection.Pump()
+        try:
+            self.Pump()
+            connection.Pump()
+        except Exception as e:
+            logging.error(e)	
+            sleep(1)
+            pass
 
         # master keep alive
         if self.count == 100:
