@@ -130,7 +130,7 @@ class SnowlyServer(Server):
 
         if websocket_support:
             params['clients'] = clients
-            cherrypy.engine.publish('websocket-broadcast', TextMessage(json.dumps(list(params))))
+            cherrypy.engine.publish('websocket-broadcast', TextMessage(json.dumps(params)))
             params.pop('clients', None)
 
         for id in clients:
