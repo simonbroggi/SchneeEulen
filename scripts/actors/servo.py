@@ -10,7 +10,7 @@ except ImportError:
     logging.info("- no pigpio lib available - fallback to dummy mode")
 
 
-import queue
+import Queue
 
 class Servo(threading.Thread):
     signal = True
@@ -18,7 +18,8 @@ class Servo(threading.Thread):
     min_angle = 0
     max_angle = 180
     pw_min = 500
-    pw_max = 2500
+    #pw_max = 2500
+    pw_max = 2000
     freq = 50
     direction = 'normal'
     gpio = None
@@ -39,7 +40,7 @@ class Servo(threading.Thread):
         self.pw_max = pw_max
         self.freq = freq
         self.gpio = gpio
-        self.queue = queue.Queue()
+        self.queue = Queue.Queue()
         self.current_val = pw_min
         self.direction = direction
 
@@ -124,15 +125,25 @@ class Servo(threading.Thread):
             pw = start_pw
             while self.signal and not self.stop_op and step_count > 0:
                 #logging.debug('---> set servo pulsewidth %d' % pw)
+                dt1 = time.time()
                 self.pi.set_servo_pulsewidth(self.gpio, pw)
+                dt2 = time.time()
                 self.current_val = pw
                 pw += step_size
                 if self.signal:
-                    self.exitEvent.wait(step_delay)
+                    if step_delay - dt2-dt1 > 0:
+                        self.exitEvent.wait(step_delay - (dt2-dt1))
+                    else:
+                        self.exitEvent.wait(0.0001)
+
                 step_count -= 1
 
             self.current_val = end_pw
             self.pi.set_servo_pulsewidth(self.gpio, end_pw)
+            time.sleep(0.001)
+            # turn off servo when in final position 
+            self.pi.set_servo_pulsewidth(self.gpio, 0)
+
         except Exception as e:
             logging.error(e)
 
@@ -140,6 +151,7 @@ class Servo(threading.Thread):
         self.pwm_init()
         logging.debug('Servo loop gpio=%s' % self.gpio)
         while self.signal:
+            time.sleep(0.05)
             while self.signal and self.queue.qsize() > 0 and not self.stop_op:
                 #logging.debug('Fetch op from queue=%s' % self.queue)
                 op = self.queue.get()

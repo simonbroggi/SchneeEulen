@@ -10,10 +10,10 @@ try:
 except ImportError:
     logging.info("- no pigpio lib available - fallback to dummy mode")
 
-import queue
+import Queue
 
 class Dimmer(threading.Thread):
-    MAX_QUEUE_SIZE = 50
+    MAX_QUEUE_SIZE = 100
     exitEvent = None
 
     def __init__(self, gpio_led, steps=1000, freq=100, body_part='Dimmer-%s'):
@@ -25,7 +25,7 @@ class Dimmer(threading.Thread):
         self.steps = steps
         self.freq = freq
         self.gpio = gpio_led
-        self.queue = queue.Queue(self.MAX_QUEUE_SIZE)
+        self.queue = Queue.Queue(self.MAX_QUEUE_SIZE)
         self.current_val = 0.0
         self.stop_op = False
         self.daemon = True
@@ -95,22 +95,34 @@ class Dimmer(threading.Thread):
                 step_delay = 0
             else:
                 step_delay = op['duration'] / step_count
-            #logging.debug('self=%s start=%f end_step=%f step_delay=%f step_count=%f' % (self, start_step, end_step, step_delay, step_count))
+            logging.debug('self=%s start=%f end_step=%f step_delay=%f step_count=%f' % (self, start_step, end_step, step_delay, step_count))
 
             t = start_step
+            t1 = time.time()
             while self.signal and not self.stop_op and step_count > 0:
                 #logging.debug('- set dutycycle for t=%f => %f, current_val=%f' % (t, self.dutycycle(t), self.current_val))
                 self.current_val = t
+                dt1 = time.time() 
                 self.pi.set_PWM_dutycycle(self.gpio, self.dutycycle(self.current_val))
-                #time.sleep(step_delay)
+                dt2 = time.time()
+
+                #logging.debug('dutycycle takes %f -> wait %f' % ( (dt2-dt1), (step_delay - (dt2-dt1))))
+
                 if self.signal:
-                    self.exitEvent.wait(step_delay)
+                    if (step_delay - (dt2-dt1) > 0):
+                        self.exitEvent.wait(step_delay - (dt2-dt1))
+                    else:
+                        self.exitEvent.wait(0.001)
+
                 t += step_size
                 step_count -= 1
 
             # case when step_size does not fit end
             self.current_val = self.dutycycle(end_step)
             self.pi.set_PWM_dutycycle(self.gpio, self.dutycycle(end_step))
+
+            t2 = time.time()
+            logging.debug('- dt=%f', t2-t1)
         except Exception as e:
             logging.error(e)
 
@@ -119,6 +131,7 @@ class Dimmer(threading.Thread):
         self.pwm_init()
 
         while self.signal:
+            time.sleep(0.05)
             while self.signal and self.queue.qsize() > 0 and not self.stop_op:
                 logging.debug('Fetch op from queue=%s' % self.queue)
                 op = self.queue.get()
@@ -137,17 +150,14 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG, format='[%(levelname)s] (%(threadName)-10s) %(message)s')
 
     logging.debug('dimmer test (start)')
-    dimmer = Dimmer(27, 500, 500)
+    dimmer = Dimmer(19, 500, 500)
     dimmer.start()
-    dimmer.add(float('nan'), 1.0, 0.0, 1)
-    dimmer.add(1.0, 0.0, 0.0, -1)
+    # start_val, end_val, duration, step_size
+    dimmer.add(float('nan'), 1.0, 1.0, 1.0)
+    dimmer.add(1.0, 0.0, 0.0, 1.0)
 
-    time.sleep(2)
-    #dimmer.add(0.0, 1.0, 0.0, 1)
-    dimmer.add(float('nan'), 0.0, 0.0, -1)
-    dimmer.add(float('nan'), 0.0, 1.0, 1)
     try:
-        time.sleep(1000)
+        time.sleep(10)
     except KeyboardInterrupt:
         print('- interrupt -')
         dimmer.signal_exit()
