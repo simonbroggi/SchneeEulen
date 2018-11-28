@@ -329,7 +329,6 @@ class SnowlyWebService:
             'ts': time.time()
         }
         self.server.send_command([target], cmd)
-        cmd['clear'] = False
         cmd['id'] = 'eye_right'
         self.server.send_command([target], cmd)
         cmd['id'] = 'eye_left'
