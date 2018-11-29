@@ -24,7 +24,6 @@ from strategies.client.autonomous import HeartbeatAndLook
 __exitSignal__ = False
 
 # logging configuration
-log = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='[%(levelname)s] (%(threadName)-10s) %(message)s')
 
 SERVO_DEFAULT_MIN_PW = 800
@@ -70,10 +69,10 @@ class SnowlyClient(ConnectionListener):
 
     """ Initialize independent dimmer threads """
     def initDimmers(self):
-        logging.debug("initializing dimmers: %s", conf.LIGHT_DIMMERS)
+        logger.debug("initializing dimmers: %s", conf.LIGHT_DIMMERS)
         for key in conf.LIGHT_DIMMERS.keys():
             dimmer_conf = conf.LIGHT_DIMMERS[key]
-            logging.debug("- dimmer %s gpio=%s steps=%s freq=%s" % (key,dimmer_conf['gpio'],dimmer_conf['steps'],dimmer_conf['freq']))
+            logger.debug("- dimmer %s gpio=%s steps=%s freq=%s" % (key,dimmer_conf['gpio'],dimmer_conf['steps'],dimmer_conf['freq']))
             self.dimmers[key] = led.Dimmer(dimmer_conf['gpio'], dimmer_conf['steps'], dimmer_conf['freq'], 'Dimmer-' + key + '-%s')
             self.dimmers[key].start()
 
@@ -83,7 +82,7 @@ class SnowlyClient(ConnectionListener):
 
     """ Initialize independent servo threads """
     def initServos(self):
-        logging.debug("initializing servos: %s", conf.SERVO_CONTROL)
+        logger.debug("initializing servos: %s", conf.SERVO_CONTROL)
         for key in conf.SERVO_CONTROL.keys():
             servo_conf = conf.SERVO_CONTROL[key]
             if not 'direction' in servo_conf:
@@ -98,47 +97,47 @@ class SnowlyClient(ConnectionListener):
             self.servos[key].start()
 
     def shutdownDimmers(self):
-        logging.debug("shutting down dimmer threads")
+        logger.debug("shutting down dimmer threads")
         for dimmer in self.dimmers.items():
             dimmer[1].signal_exit()
             while dimmer[1].is_alive():
                 sleep(0.05)
 
-        logging.debug("all dimmers shutdown gracefully")
+        logger.debug("all dimmers shutdown gracefully")
 
     def shutdownServos(self):
-        logging.debug("shutting down all servo threads")
+        logger.debug("shutting down all servo threads")
         for servo in self.servos.items():
             servo[1].signal_exit()
             while servo[1].is_alive():
                 sleep(0.05)
 
-        logging.debug("all servos shutdown gracefully")
+        logger.debug("all servos shutdown gracefully")
 
     def get_dimmer(self, key):
-        #logging.debug(self.dimmers)
+        #logger.debug(self.dimmers)
         return self.dimmers[key]
 
     def get_servo(self, key):
         return self.servos[key]
 
     def Network(self, data):
-        log.debug('received network data: %s' % data)
+        logger.debug('received network data: %s' % data)
         pass
 
     def Network_connected(self, data):
-        log.debug("connected to the server")
+        logger.debug("connected to the server")
         self.state = consts.STATE_CONNECTED
         self.is_connecting = 0
         self.send_config()
 
     def Network_disconnected(self, data):
-        log.debug("disconnected from the server")
+        logger.debug("disconnected from the server")
         self.state = consts.STATE_DISCONNECTED
         self.is_connecting = 0
 
     def Network_error(self, data):
-        log.debug("error: %s", data)
+        logger.debug("error: %s", data)
         self.state = consts.STATE_DISCONNECTED
         self.is_connecting = 0
 
@@ -146,13 +145,13 @@ class SnowlyClient(ConnectionListener):
         None
 
     def connect(self):
-        log.debug("Connecting to "+''.join((self.host, ':'+str(self.port))))
+        logger.debug("Connecting to "+''.join((self.host, ':'+str(self.port))))
         self.is_connecting = 1
         self.Connect((self.host, self.port))
 
     def reconnect(self):
         # if we get disconnected, only try once per second to re-connect
-        log.debug("no connection or connection lost - trying reconnection in %ds..." % conf.NETWORK_CONNECT_RETRY_DELAY)
+        logger.debug("no connection or connection lost - trying reconnection in %ds..." % conf.NETWORK_CONNECT_RETRY_DELAY)
         self.connect_retry_time = conf.NETWORK_CONNECT_RETRY_DELAY + time.time()
         self.connect()
 
@@ -163,7 +162,7 @@ class SnowlyClient(ConnectionListener):
         })
 
     def event_input(self, channel, val):
-        log.debug("input event on channel=%s val=%s delegating to master ", (channel, val))
+        logger.debug("input event on channel=%s val=%s delegating to master ", (channel, val))
         self.Send({
             'action': 'input',
             'channel': channel,
@@ -171,7 +170,7 @@ class SnowlyClient(ConnectionListener):
         })
 
     def Network_sync(self, data):
-        logging.debug('master command: sync %s' % data)
+        logger.debug('master command: sync %s' % data)
         if self.active_strategy is not None:
             self.switch_strategy(None)
 
@@ -179,7 +178,7 @@ class SnowlyClient(ConnectionListener):
         self.slave_keepalive = time.time()
 
     def Network_command(self, data):
-        logging.debug('master command: command %s' % data)
+        logger.debug('master command: command %s' % data)
         #if self.active_strategy is not None:
         #    self.switch_strategy(None)
 
@@ -189,7 +188,7 @@ class SnowlyClient(ConnectionListener):
         self.process_command(data)
 
     def process_command(self, data):
-        logging.debug('processing command %s' % data['command'])
+        logger.debug('processing command %s' % data['command'])
         if data['command'] == 'dim':
             if not 'start_val' in data:
                 data['start_val'] = float('nan')
@@ -206,8 +205,8 @@ class SnowlyClient(ConnectionListener):
                 dimmer = self.dimmers[data['id']]
                 dimmer.add(data['start_val'], data['end_val'], data['duration'], data['step'], data['clear'])
             except Exception as e:
-                logging.error(e)
-                logging.error("error with dim command: %s" % e)
+                logger.error(e)
+                logger.error("error with dim command: %s" % e)
 
         elif data['command'] == 'move':
             # fill in defaults
@@ -226,22 +225,22 @@ class SnowlyClient(ConnectionListener):
                 servo = self.servos[data['id']]
                 servo.add(data['start_angle'], data['end_angle'], data['duration'], data['step'], data['clear'])
             except Exception as e:
-                logging.error("error with move command: %s" % e)
+                logger.error("error with move command: %s" % e)
 
         elif data['command'] == 'switch_strategy':
             try:
                 strategy = data['strategy']
-                logging.debug('----> command switch_strategy strategy=%s active_strategy=%s' % (strategy, self.active_strategy))
+                logger.debug('----> command switch_strategy strategy=%s active_strategy=%s' % (strategy, self.active_strategy))
 
                 if strategy is not None:
-                    logging.debug('calling switch_strategy with %s' % globals()[strategy])
+                    logger.debug('calling switch_strategy with %s' % globals()[strategy])
                     self.switch_strategy(globals()[strategy])
                 else:
-                    logging.debug('calling switch strategy with None')
+                    logger.debug('calling switch strategy with None')
                     self.switch_strategy(None)
 
             except Exception as e:
-                logging.error("error when switching strategy: %s" % e)
+                logger.error("error when switching strategy: %s" % e)
 
     def check_keyboard_commands(self):
         r, w, x = select.select([sys.stdin], [], [], 0.0001)
@@ -278,15 +277,15 @@ class SnowlyClient(ConnectionListener):
         }
 
         #strategy.registered({'owner': self })
-        logging.debug("registered strategy %s with id %s" % (strategy, strategy.__name__))
+        logger.debug("registered strategy %s with id %s" % (strategy, strategy.__name__))
 
     def remove_strategy(self, strategy):
         del self.strategies[strategy]
 
     def switch_strategy(self, new_strategy):
-        logging.debug("==============> switch strategy: active=%s new=%s" % (self.active_strategy, new_strategy))
+        logger.debug("==============> switch strategy: active=%s new=%s" % (self.active_strategy, new_strategy))
         if type(self.active_strategy) is new_strategy:
-            logging.debug('strategy %s already active' % new_strategy)
+            logger.debug('strategy %s already active' % new_strategy)
             return
 
         logging.debug("switching strategy to %s" % new_strategy)
@@ -307,8 +306,8 @@ class SnowlyClient(ConnectionListener):
             self.Pump()
             connection.Pump()
         except Exception as e:
-            logging.error(e)	
-            sleep(1)
+            #logging.error(e)	
+            sleep(5)
             pass
 
         # master keep alive
@@ -352,16 +351,17 @@ if len(sys.argv) == 2:
     if config_file[-3:] == ".py":
         config_file = config_file[:-3]
 
-log.debug("Reading configuration from file %s.py" % config_file)
+logging.debug("Reading configuration from file %s.py" % config_file)
 conf = __import__('conf.' + config_file, globals(), locals(), [config_file])
 #logging.debug(_conf)
 #conf = _conf[config_file]
 
 # update log configuration
-log.setLevel(conf.LOG_LEVEL)
-##logging.basicConfig(level=conf.LOG_LEVEL, format='[%(levelname)s] (%(threadName)-10s) %(message)s')
+logging.basicConfig(level=conf.LOG_LEVEL, format='[%(levelname)s] (%(threadName)-10s) %(message)s')
+logger = logging.getLogger(__name__)
+logger.setLevel(conf.LOG_LEVEL)
 
-log.debug("Creating client %s" % conf.CLIENT_ID)
+logger.debug("Creating client %s" % conf.CLIENT_ID)
 client = SnowlyClient(conf.CLIENT_MASTER_IP, conf.CLIENT_MASTER_PORT)
 
 # register client strategies (stoppable threads)
@@ -387,14 +387,14 @@ signal.signal(signal.SIGTERM, clean_terminate)
 # main thread
 try:
     while not __exitSignal__:
-        # log.debug("- main loop step %s" % time.time())
+        # logger.debug("- main loop step %s" % time.time())
         client.check_keyboard_commands()
         client.Loop()
         sleep(0.01)
 
 except KeyboardInterrupt:
-    log.debug("Keyboard interrupt")
+    logger.debug("Keyboard interrupt")
     __exitSignal__ = True
     client.shutdown()
 
-log.debug("Exit client %s" % conf.CLIENT_ID)
+logger.debug("Exit client %s" % conf.CLIENT_ID)

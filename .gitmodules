@@ -7,6 +7,3 @@
 [submodule "libs/ws4py"]
 	path = libs/ws4py
 	url = https://github.com/Lawouach/WebSocket-for-Python.git
-[submodule "libs/blinka"]
-	path = libs/blinka
-	url = https://github.com/adafruit/Adafruit_Blinka

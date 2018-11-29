@@ -130,7 +130,7 @@ class SnowlyServer(Server):
 
         if websocket_support:
             params['clients'] = clients
-            cherrypy.engine.publish('websocket-broadcast', TextMessage(json.dumps(list(params))))
+            cherrypy.engine.publish('websocket-broadcast', TextMessage(json.dumps(params)))
             params.pop('clients', None)
 
         for id in clients:
@@ -329,7 +329,6 @@ class SnowlyWebService:
             'ts': time.time()
         }
         self.server.send_command([target], cmd)
-        cmd['clear'] = False
         cmd['id'] = 'eye_right'
         self.server.send_command([target], cmd)
         cmd['id'] = 'eye_left'
