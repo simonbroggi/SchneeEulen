@@ -18,8 +18,8 @@ class Servo(threading.Thread):
     min_angle = 0
     max_angle = 180
     pw_min = 500
-    #pw_max = 2500
-    pw_max = 2000
+    pw_max = 2500
+    #pw_max = 2000
     freq = 50
     direction = 'normal'
     gpio = None
@@ -130,11 +130,18 @@ class Servo(threading.Thread):
                 dt2 = time.time()
                 self.current_val = pw
                 pw += step_size
-                if self.signal:
-                    if step_delay - dt2-dt1 > 0:
-                        self.exitEvent.wait(step_delay - (dt2-dt1))
-                    else:
-                        self.exitEvent.wait(0.0001)
+                if (step_delay - dt2-dt1) > 0:
+                    self.exitEvent.wait(step_delay - (dt2-dt1))
+                else:
+                    self.exitEvent.wait(0.0001)
+
+                #if self.signal:
+                #    if step_delay - dt2-dt1 > 0:
+                #        #self.exitEvent.wait(step_delay - (dt2-dt1))
+                #        self.exitEvent.wait(step_delay)
+                #    else:
+                #        #self.exitEvent.wait(0.0001)
+                #        self.exitEvent.wait(0.001)
 
                 step_count -= 1
 
@@ -159,7 +166,7 @@ class Servo(threading.Thread):
                 self.run_op(op)
 
             while self.stop_op and self.signal:
-                time.sleep(0.01)
+                time.sleep(0.001)
 
         logging.debug('Servo on gpio=%s graceful shutdown' % self.gpio)
         self.pi.set_servo_pulsewidth(self.gpio, 0)
