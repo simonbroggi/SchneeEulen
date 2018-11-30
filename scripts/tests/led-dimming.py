@@ -4,7 +4,7 @@ import time, sys, random, math
 import threading
 import pigpio
 
-gpio = 27
+gpio = 19
 
 pi = pigpio.pi() # connect to local Pi
 

@@ -20,26 +20,26 @@ CLIENT_ID = 'LISA'
 # dimmer configuration per client (should be 3 per owl-client, max 9 per raspberry)
 LIGHT_DIMMERS = {
     'eye_left': {
-        'gpio': 17,
+        'gpio': 13,
         'steps': 500,
-        'freq': 300
+        'freq': 1000
     },
      'body': {
-        'gpio': 27,
+        'gpio': 19,
         'steps': 500,
-        'freq': 300
+        'freq': 1000
     },
     'eye_right': {
-        'gpio': 22,
+        'gpio': 26,
         'steps': 500,
-        'freq': 300
+        'freq': 1000
     }
 }
 
 # servo configuration per client (should be 1 per owl)
 SERVO_CONTROL = {
     'head': {
-        'gpio': 4
+        'gpio': 6
     }
 }
 
