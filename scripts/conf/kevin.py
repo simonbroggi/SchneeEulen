@@ -21,18 +21,18 @@ CLIENT_ID = 'KEVIN'
 LIGHT_DIMMERS = {
     'eye_left': {
         'gpio': 13,
-        'steps': 300,
-        'freq': 300,
+        'steps': 500,
+        'freq': 1000,
     },
      'body': {
         'gpio': 19,
         'steps': 500,
-        'freq': 300
+        'freq': 1000
     },
     'eye_right': {
         'gpio': 26,
         'steps': 500,
-        'freq': 300
+        'freq': 1000
     }
 }
 
