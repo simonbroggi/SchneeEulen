@@ -26,7 +26,7 @@ __exitSignal__ = False
 # logging configuration
 logging.basicConfig(level=logging.INFO, format='[%(levelname)s] (%(threadName)-10s) %(message)s')
 
-SERVO_DEFAULT_MIN_PW = 800
+SERVO_DEFAULT_MIN_PW = 500
 SERVO_DEFAULT_MAX_PW = 2500
 
 # generic network listener, used for reconnecting
@@ -366,9 +366,9 @@ client = SnowlyClient(conf.CLIENT_MASTER_IP, conf.CLIENT_MASTER_PORT)
 
 # register client strategies (stoppable threads)
 client.register_strategy(SimpleAuto, 0)
-client.register_strategy(BreathAndLook, 1)
-client.register_strategy(HeartbeatAndLook, 2)
-client.register_strategy(NightBlinking, 999)
+#client.register_strategy(BreathAndLook, 1)
+#client.register_strategy(HeartbeatAndLook, 2)
+#client.register_strategy(NightBlinking, 999)
 
 #client.register_strategy(SimpleRandomizedStrategy, 1)
 #client.register_strategy(StrategyThread, 999)

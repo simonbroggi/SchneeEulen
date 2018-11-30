@@ -109,7 +109,7 @@ class Dimmer(threading.Thread):
                 #logging.debug('dutycycle takes %f -> wait %f' % ( (dt2-dt1), (step_delay - (dt2-dt1))))
 
                 if self.signal:
-                    if (step_delay - (dt2-dt1) > 0):
+                    if step_delay - (dt2-dt1) > 0:
                         self.exitEvent.wait(step_delay - (dt2-dt1))
                     else:
                         self.exitEvent.wait(0.001)
