@@ -312,7 +312,7 @@ class SnowlyWebService:
             'command': 'move',
             'id': 'head',
             'end_angle': float(angle),
-            'duration': 0.25,
+            'duration': 2.5,
             'clear': True,
             'ts': time.time()
         }
@@ -323,7 +323,7 @@ class SnowlyWebService:
             'command': 'dim',
             'id': 'body',
             'end_val': float(light),
-            'duration': 0.5,
+            'duration': 0.25,
             'step': 2,
             'clear': True,
             'ts': time.time()
