@@ -45,25 +45,25 @@
   var cameraLookAtHeight = 0.4;
 
 
-  var owlScales = [1.0, 1.0, .5, .5, .5];
-  var owlNames = ['KLAUS', 'MARTHA', 'KEVIN','MAJA','LISA'];
+  var owlScales = [1.0, 1.0, 1.0];
+  var owlNames = ['KEVIN','MAJA','LISA'];
   var owlBounds;
 
-  var numOwls = 5;
+  var numOwls = 3;
    // -z, +y, +x
   var owlPositions = [
-    new THREE.Vector3( -2,  4,  -1),
+    new THREE.Vector3( -2,  0,  -1),
     new THREE.Vector3(4,  0, -8),
-    new THREE.Vector3( -2,  4,  4),
-    new THREE.Vector3(0,  1, 2),
-    new THREE.Vector3(-1, 2, -5)
+    new THREE.Vector3( +4,  0,  4),
+    //new THREE.Vector3(0,  1, 2),
+    //new THREE.Vector3(-1, 2, -5)
   ];
   var owlCameras = [
-    new THREE.Vector3(10, 10, 0),
+    new THREE.Vector3(8, 10, 0),
     new THREE.Vector3(14, 2, -6),
-    new THREE.Vector3(7, 4, 10),
-    new THREE.Vector3(8, 3, 4),
-    new THREE.Vector3(10, 3, 0)
+    new THREE.Vector3(12, 4, 10),
+    //new THREE.Vector3(8, 3, 4),
+    //new THREE.Vector3(10, 3, 0)
   ];
 
 
@@ -392,7 +392,7 @@
     loader = new THREE.ObjectLoader();
 
     // load the model and create everything
-    loader.load('static/models/snowy-owl-improved.json', function (data) {
+    loader.load('/static/models/snowy-owl-improved.json', function (data) {
       var meshes = {}, i, j, head, body, p, light;
       var sizeHead, sizeBody;
 
@@ -403,8 +403,8 @@
       head = meshes['HullHead'];
       body = meshes['HullBody'];
 
-      head.material.emissiveMap = THREE.ImageUtils.loadTexture('static/models/emission_head.jpg');
-      body.material.emissiveMap = THREE.ImageUtils.loadTexture('static/models/emission_body.jpg');
+      head.material.emissiveMap = THREE.ImageUtils.loadTexture('/static/models/emission_head.jpg');
+      body.material.emissiveMap = THREE.ImageUtils.loadTexture('/static/models/emission_body.jpg');
 
       for (i=0; i<owls.length; i++) {
         owls[i].head =  head.clone();
